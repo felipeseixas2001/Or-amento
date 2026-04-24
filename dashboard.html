@@ -1,0 +1,2459 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>Orçamento do Casal</title>
+<style>
+:root {
+  --bg: #0b0f1a;
+  --bg2: #141a2b;
+  --bg3: #1e2740;
+  --border: #2a3454;
+  --text: #e6eaf5;
+  --muted: #8a93b0;
+  --accent: #60a5fa;
+  --good: #34d399;
+  --warn: #fbbf24;
+  --bad: #f87171;
+  --purple: #a78bfa;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+header {
+  background: var(--bg2);
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+header h1 { font-size: 16px; font-weight: 700; color: var(--accent); flex: 1; }
+header select, header button {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 13px;
+  cursor: pointer;
+}
+header select:hover, header button:hover { border-color: var(--accent); }
+nav {
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  -webkit-overflow-scrolling: touch;
+}
+nav button {
+  background: transparent;
+  border: none;
+  color: var(--muted);
+  padding: 12px 14px;
+  white-space: nowrap;
+  cursor: pointer;
+  font-size: 13px;
+  border-bottom: 2px solid transparent;
+  transition: all 0.15s;
+}
+nav button:hover { color: var(--text); }
+nav button.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+main { padding: 16px; max-width: 1400px; margin: 0 auto; padding-bottom: 80px; }
+h2 { font-size: 20px; margin-bottom: 16px; }
+h3 { font-size: 16px; margin: 16px 0 8px; color: var(--muted); font-weight: 600; }
+
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 20px; }
+.card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 16px;
+}
+.card .label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+.card .value { font-size: 22px; font-weight: 700; margin-top: 4px; }
+.card .sub { font-size: 12px; color: var(--muted); margin-top: 4px; }
+.card.good .value { color: var(--good); }
+.card.bad .value { color: var(--bad); }
+.card.warn .value { color: var(--warn); }
+
+.section { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 16px; margin-bottom: 16px; }
+
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th, td { padding: 8px 10px; text-align: left; border-bottom: 1px solid var(--border); }
+th { background: var(--bg3); color: var(--muted); font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; }
+tr:hover td { background: rgba(255,255,255,0.02); }
+.matrix tr.subtotal-row:hover td, .matrix tr.total-row:hover td, .matrix tr.group-header:hover td { background: unset; }
+.matrix tr.subtotal-row:hover td { background: #1a2540; }
+.matrix tr.subtotal-row:hover td.tcol { background: #243a60; }
+.matrix tr.total-row:hover td { background: #253252; }
+.matrix tr.total-row:hover td.tcol { background: #34466e; }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+td input, td select {
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text);
+  padding: 4px 6px;
+  border-radius: 4px;
+  font-size: 13px;
+  width: 100%;
+}
+td input:hover, td select:hover { border-color: var(--border); }
+td input:focus, td select:focus { border-color: var(--accent); outline: none; background: var(--bg3); }
+td input[type=number], td input.num { text-align: right; }
+
+.badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; }
+.badge.mensal { background: rgba(96,165,250,0.15); color: var(--accent); }
+.badge.anual { background: rgba(167,139,250,0.15); color: var(--purple); }
+.badge.data { background: rgba(251,191,36,0.15); color: var(--warn); }
+.badge.semanal { background: rgba(52,211,153,0.15); color: var(--good); }
+.badge.ok { background: rgba(52,211,153,0.15); color: var(--good); }
+.badge.alerta { background: rgba(251,191,36,0.15); color: var(--warn); }
+.badge.estouro { background: rgba(248,113,113,0.15); color: var(--bad); }
+
+.btn {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.btn:hover { opacity: 0.9; }
+.btn.ghost { background: transparent; border: 1px solid var(--border); color: var(--text); }
+.btn.danger { background: var(--bad); }
+.btn-small { padding: 4px 10px; font-size: 12px; }
+
+.form-row { display: grid; grid-template-columns: 160px 1fr; gap: 12px; align-items: center; margin-bottom: 12px; }
+.form-row label { color: var(--muted); font-size: 13px; }
+.form-row input, .form-row select, .form-row textarea {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 8px 10px;
+  border-radius: 6px;
+  font-size: 14px;
+  width: 100%;
+  font-family: inherit;
+}
+.form-row input:focus, .form-row select:focus, .form-row textarea:focus { border-color: var(--accent); outline: none; }
+
+.gavetas { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 16px; }
+.gaveta {
+  background: var(--bg2);
+  border: 2px solid var(--border);
+  border-radius: 10px;
+  padding: 20px;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.2s;
+}
+.gaveta:hover, .gaveta.active { border-color: var(--accent); background: var(--bg3); }
+.gaveta h3 { color: var(--text); margin: 0 0 4px; }
+.gaveta .sub { color: var(--muted); font-size: 12px; }
+
+.bar { height: 8px; background: var(--bg3); border-radius: 4px; overflow: hidden; margin-top: 4px; }
+.bar-fill { height: 100%; background: var(--good); transition: width 0.3s; }
+.bar-fill.warn { background: var(--warn); }
+.bar-fill.bad { background: var(--bad); }
+
+.alert {
+  padding: 10px 14px;
+  border-radius: 6px;
+  font-size: 13px;
+  margin-bottom: 8px;
+  border-left: 3px solid var(--warn);
+  background: rgba(251,191,36,0.08);
+}
+.alert.bad { border-left-color: var(--bad); background: rgba(248,113,113,0.08); }
+.alert.ok { border-left-color: var(--good); background: rgba(52,211,153,0.08); }
+
+.muted { color: var(--muted); }
+.num-good { color: var(--good); font-variant-numeric: tabular-nums; }
+.num-bad { color: var(--bad); font-variant-numeric: tabular-nums; }
+
+footer {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  background: var(--bg2);
+  border-top: 1px solid var(--border);
+  padding: 8px 16px;
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  font-size: 12px;
+}
+
+@media (max-width: 640px) {
+  main { padding: 12px; }
+  .form-row { grid-template-columns: 1fr; gap: 4px; }
+  .form-row label { font-size: 11px; }
+  table { font-size: 12px; }
+  th, td { padding: 6px 8px; }
+}
+
+/* Sub-tabs dentro de uma view */
+.subtabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+}
+.subtab {
+  background: transparent;
+  border: none;
+  color: var(--muted);
+  padding: 10px 18px;
+  cursor: pointer;
+  font-size: 14px;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  font-family: inherit;
+  transition: color 0.15s;
+}
+.subtab:hover { color: var(--text); }
+.subtab.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+  font-weight: 600;
+}
+
+/* ===== Matriz horizontal (Orçamento) ===== */
+.matrix-wrap {
+  overflow: auto;
+  max-height: 75vh;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg2);
+  scrollbar-gutter: stable;
+}
+.matrix-wrap::-webkit-scrollbar {
+  height: 12px;
+  width: 12px;
+}
+.matrix-wrap::-webkit-scrollbar-track {
+  background: var(--bg);
+}
+.matrix-wrap::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 6px;
+  border: 2px solid var(--bg);
+}
+.matrix-wrap::-webkit-scrollbar-thumb:hover {
+  background: var(--accent);
+}
+.matrix-wrap::-webkit-scrollbar-corner {
+  background: var(--bg);
+}
+.matrix { font-size: 12px; border-collapse: separate; border-spacing: 0; }
+.matrix th, .matrix td { padding: 6px 10px; white-space: nowrap; border-bottom: 1px solid var(--border); }
+.matrix thead th {
+  position: sticky; top: 0;
+  background: var(--bg3);
+  z-index: 3;
+  font-weight: 600;
+  font-size: 11px;
+}
+.matrix td.sticky-col, .matrix th.sticky-col {
+  position: sticky; left: 0;
+  background: var(--bg2);
+  z-index: 2;
+  border-right: 2px solid var(--border);
+  min-width: 220px;
+  max-width: 260px;
+}
+.matrix thead th.sticky-col { background: var(--bg3); z-index: 4; }
+.matrix .group-header td {
+  background: var(--bg3);
+  font-weight: 700;
+  color: var(--accent);
+  padding: 10px;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+/* Totais travados à direita (opacos pra não vazar texto de trás) */
+.matrix td.tcol, .matrix th.tcol {
+  background: #1e2740;
+  font-weight: 700;
+  min-width: 110px;
+  max-width: 110px;
+  position: sticky;
+  z-index: 2;
+  font-variant-numeric: tabular-nums;
+}
+.matrix td.tcol-1, .matrix th.tcol-1 { right: 220px; border-left: 2px solid var(--border); }
+.matrix td.tcol-2, .matrix th.tcol-2 { right: 110px; }
+.matrix td.tcol-3, .matrix th.tcol-3 { right: 0; color: var(--accent); }
+.matrix thead th.tcol { z-index: 4; background: #2a3454; }
+
+/* Linha de subtotal — azul médio */
+.matrix .subtotal-row td {
+  background: #1a2540;
+  color: var(--text);
+  font-weight: 600;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+.matrix .subtotal-row td.tcol { background: #243a60; }
+.matrix .subtotal-row td.sticky-col {
+  background: #1a2540;
+  color: var(--accent);
+  font-weight: 700;
+}
+.matrix .subtotal-row td.tcol-3 { color: var(--accent); }
+
+/* Linha total geral — destaque mais forte */
+.matrix .total-row td {
+  background: #253252;
+  color: var(--text);
+  font-weight: 700;
+  font-size: 13px;
+  border-top: 2px solid var(--accent);
+}
+.matrix .total-row td.tcol { background: #34466e; }
+.matrix .total-row td.sticky-col {
+  background: #253252;
+  color: var(--accent);
+  font-size: 13px;
+}
+.matrix .total-row td.tcol-3 { color: var(--good); font-size: 14px; }
+.matrix a.cat-link {
+  color: var(--text);
+  text-decoration: none;
+  cursor: pointer;
+  display: inline-block;
+}
+.matrix a.cat-link:hover { color: var(--accent); }
+.matrix .zero { color: var(--muted); opacity: 0.4; }
+.matrix input.cell-edit {
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text);
+  padding: 2px 4px;
+  width: 80px;
+  text-align: right;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  border-radius: 3px;
+}
+.matrix input.cell-edit:hover { border-color: var(--border); }
+.matrix input.cell-edit:focus { border-color: var(--accent); background: var(--bg3); outline: none; }
+
+/* ===== Modal ===== */
+.modal-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.75);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 100;
+  padding: 16px;
+}
+.modal {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  max-width: 700px;
+  width: 100%;
+  max-height: 90vh;
+  display: flex; flex-direction: column;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+}
+.modal-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+  display: flex; justify-content: space-between; align-items: center;
+}
+.modal-header h3 { color: var(--accent); margin: 0; }
+.modal-header button {
+  background: transparent; border: none; color: var(--muted);
+  font-size: 20px; cursor: pointer; line-height: 1;
+}
+.modal-header button:hover { color: var(--bad); }
+.modal-body { padding: 20px; overflow-y: auto; flex: 1; }
+.modal-footer {
+  padding: 12px 20px;
+  border-top: 1px solid var(--border);
+  display: flex; gap: 8px; justify-content: flex-end;
+}
+.modal-body table { font-size: 12px; }
+.modal-body h4 { margin: 16px 0 8px; color: var(--muted); font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; }
+.tipo-info strong { color: var(--accent); }
+.tipo-info .ex { color: var(--muted); font-style: italic; margin-top: 8px; display: block; font-size: 11px; }
+.tipo-regras { margin: 8px 0; padding: 8px 0; border-top: 1px solid var(--border); }
+.tipo-regras .regra { margin: 4px 0; font-size: 12px; }
+.regra-label { font-weight: 700; display: inline-block; min-width: 88px; }
+.regra-estourou { color: var(--bad); }
+.regra-faltou { color: var(--good); }
+
+/* Chips de tipo */
+.tipo-chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.chip-tipo {
+  position: relative;
+  padding: 7px 12px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  cursor: pointer;
+  font-size: 13px;
+  font-family: inherit;
+  user-select: none;
+  transition: all 0.15s;
+}
+.chip-tipo:hover { border-color: var(--accent); }
+.chip-tipo.active {
+  background: rgba(96,165,250,0.2);
+  border-color: var(--accent);
+  color: var(--accent);
+  font-weight: 600;
+}
+.chip-tipo .chip-tooltip {
+  position: fixed;
+  width: 340px;
+  background: var(--bg);
+  border: 1px solid var(--accent);
+  padding: 12px 14px;
+  border-radius: 8px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text);
+  text-align: left;
+  display: none;
+  z-index: 9999;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+  white-space: normal;
+  font-weight: 400;
+  pointer-events: none;
+}
+.chip-tipo .chip-tooltip strong { color: var(--accent); }
+.chip-tipo .chip-tooltip .ex { color: var(--muted); font-style: italic; margin-top: 8px; display: block; font-size: 11px; }
+@media (max-width: 640px) {
+  .chip-tipo .chip-tooltip { width: 260px; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>💰 Orçamento do Casal</h1>
+  <select id="selMes"></select>
+</header>
+
+<nav id="nav"></nav>
+<main id="app"></main>
+<div id="modal-container"></div>
+
+<footer>
+  <span class="muted" id="statusBar">Pronto</span>
+  <button class="btn btn-small ghost" onclick="app.resetarTudo()">🔄 Resetar tudo</button>
+</footer>
+
+<script>
+// ==========================================================
+// 1. DADOS PRÉ-POPULADOS (SEED)
+// ==========================================================
+
+const SEMANAS_MES = [
+  {chave_mes:'2026-05', ano:2026, mes:5, mes_nome:'mai-26', dias_uteis:20, semanas:5},
+  {chave_mes:'2026-06', ano:2026, mes:6, mes_nome:'jun-26', dias_uteis:22, semanas:4},
+  {chave_mes:'2026-07', ano:2026, mes:7, mes_nome:'jul-26', dias_uteis:23, semanas:4},
+  {chave_mes:'2026-08', ano:2026, mes:8, mes_nome:'ago-26', dias_uteis:21, semanas:5},
+  {chave_mes:'2026-09', ano:2026, mes:9, mes_nome:'set-26', dias_uteis:21, semanas:4},
+  {chave_mes:'2026-10', ano:2026, mes:10, mes_nome:'out-26', dias_uteis:21, semanas:5},
+  {chave_mes:'2026-11', ano:2026, mes:11, mes_nome:'nov-26', dias_uteis:19, semanas:5},
+  {chave_mes:'2026-12', ano:2026, mes:12, mes_nome:'dez-26', dias_uteis:22, semanas:4},
+  {chave_mes:'2027-01', ano:2027, mes:1, mes_nome:'jan-27', dias_uteis:21, semanas:5},
+  {chave_mes:'2027-02', ano:2027, mes:2, mes_nome:'fev-27', dias_uteis:19, semanas:4},
+  {chave_mes:'2027-03', ano:2027, mes:3, mes_nome:'mar-27', dias_uteis:22, semanas:4},
+  {chave_mes:'2027-04', ano:2027, mes:4, mes_nome:'abr-27', dias_uteis:20, semanas:4},
+  {chave_mes:'2027-05', ano:2027, mes:5, mes_nome:'mai-27', dias_uteis:20, semanas:5},
+  {chave_mes:'2027-06', ano:2027, mes:6, mes_nome:'jun-27', dias_uteis:22, semanas:4},
+  {chave_mes:'2027-07', ano:2027, mes:7, mes_nome:'jul-27', dias_uteis:23, semanas:5},
+  {chave_mes:'2027-08', ano:2027, mes:8, mes_nome:'ago-27', dias_uteis:21, semanas:5},
+  {chave_mes:'2027-09', ano:2027, mes:9, mes_nome:'set-27', dias_uteis:21, semanas:4},
+  {chave_mes:'2027-10', ano:2027, mes:10, mes_nome:'out-27', dias_uteis:21, semanas:5},
+  {chave_mes:'2027-11', ano:2027, mes:11, mes_nome:'nov-27', dias_uteis:19, semanas:4},
+  {chave_mes:'2027-12', ano:2027, mes:12, mes_nome:'dez-27', dias_uteis:22, semanas:4},
+];
+
+// Helper: retorna todos os chave_mes entre start e end inclusive
+function mesesEntre(start, end) {
+  return SEMANAS_MES.filter(m => m.chave_mes >= start && m.chave_mes <= end).map(m => m.chave_mes);
+}
+
+function mesesAno(ano) {
+  return SEMANAS_MES.filter(m => m.ano === ano).map(m => m.chave_mes);
+}
+
+// Filtro de visualização — retorna os meses a mostrar na matriz de orçamento
+function getMesesVisiveis() {
+  if (STATE?.ui?.filtrar_mes) {
+    const ativo = STATE.config.mes_ativo;
+    return SEMANAS_MES.filter(m => m.chave_mes >= ativo);
+  }
+  return SEMANAS_MES;
+}
+
+// ==========================================================
+// BUDGET DE DESPESAS (SEED)
+// ==========================================================
+// tipo: mensal | anual_acrual | data_fixa | semanal
+// Para data_fixa: usa ocorrencias [{chave_mes, valor}]
+// Para anual_acrual: orcamento_anual {2026: X, 2027: Y}; ritmo mensal = anual / meses_do_ano_orcados
+// Para semanal: valor_base = valor por semana
+// Para mensal: valor_base = valor por mês
+
+// Helper pra criar ocorrências repetidas
+const _rep = (meses, valor) => meses.map(m => ({chave_mes: m, valor}));
+
+const BUDGET_DESPESAS_SEED = [
+  // ====== FIXA FELIPE ======
+  {id:'apoquel_kobe', grupo:'Fixa Felipe', categoria:'Apoquel Kobe', tipo:'anual_acrual', valor_base:180, orcamento_anual:{2026:1440, 2027:2160}, descricao:'Remédio Kobe, mensal mas acrua no ano'},
+  {id:'vacina_kobe', grupo:'Fixa Felipe', categoria:'Vacina Kobe', tipo:'anual_acrual', valor_base:30, orcamento_anual:{2026:60, 2027:90}, descricao:'30 cada, 3x por ano'},
+  {id:'tapete_kobe', grupo:'Fixa Felipe', categoria:'Tapete Kobe', tipo:'anual_acrual', valor_base:140, orcamento_anual:{2026:373.33, 2027:560}, descricao:'140 cada, 4x por ano'},
+  {id:'vectra_kobe', grupo:'Fixa Felipe', categoria:'Vectra 3D Kobe', tipo:'anual_acrual', valor_base:110, orcamento_anual:{2026:293.33, 2027:440}, descricao:'110 cada, 4x por ano'},
+  {id:'milbemax_kobe', grupo:'Fixa Felipe', categoria:'Milbemax Kobe', tipo:'anual_acrual', valor_base:60, orcamento_anual:{2026:240, 2027:360}, descricao:'60 cada, 6x por ano'},
+  {id:'racao_kobe', grupo:'Fixa Felipe', categoria:'Ração Obesidade Kobe', tipo:'anual_acrual', valor_base:400, orcamento_anual:{2026:1600, 2027:2400}, descricao:'400 cada, 6x por ano'},
+  {id:'banho_kobe', grupo:'Fixa Felipe', categoria:'Banho Kobe', tipo:'mensal', valor_base:60, descricao:'Banho mensal'},
+  {id:'plano_kobe', grupo:'Fixa Felipe', categoria:'Plano de Saúde Kobe', tipo:'mensal', valor_base:165, descricao:''},
+  {id:'janaina', grupo:'Fixa Felipe', categoria:'Janaína', tipo:'mensal', valor_base:60, descricao:''},
+  {id:'wifi', grupo:'Fixa Felipe', categoria:'Wi-fi', tipo:'data_fixa', valor_base:100, ocorrencias:[
+    {chave_mes:'2026-05', valor:210},
+    {chave_mes:'2026-06', valor:60},
+    {chave_mes:'2026-07', valor:60},
+    {chave_mes:'2026-08', valor:60},
+    ..._rep(['2026-09','2026-10','2026-11','2026-12','2027-01','2027-02','2027-03','2027-04','2027-05','2027-06','2027-07','2027-08','2027-09','2027-10','2027-11','2027-12'], 100)
+  ], descricao:'210 mai-26 (instalação), 60 jun-ago 26, 100 depois'},
+  {id:'gas', grupo:'Fixa Felipe', categoria:'Conta de Gás', tipo:'anual_acrual', valor_base:70, orcamento_anual:{2026:560, 2027:840}, descricao:'70/mês com acrual anual'},
+  {id:'luz', grupo:'Fixa Felipe', categoria:'Conta de Luz', tipo:'anual_acrual', valor_base:600, orcamento_anual:{2026:4800, 2027:7200}, descricao:'600/mês com acrual anual'},
+  {id:'condominio', grupo:'Fixa Felipe', categoria:'Condomínio', tipo:'mensal', valor_base:850, descricao:''},
+  {id:'iptu', grupo:'Fixa Felipe', categoria:'IPTU', tipo:'data_fixa', valor_base:800, ocorrencias:[{chave_mes:'2027-02', valor:800}], descricao:'Em fev-27'},
+  {id:'mercado', grupo:'Fixa Felipe', categoria:'Mercado + Farmácia', tipo:'semanal', valor_base:400, descricao:'400/semana'},
+  {id:'carro', grupo:'Fixa Felipe', categoria:'Carro', tipo:'semanal', valor_base:60, descricao:'60/semana'},
+  {id:'seguro_cel_f', grupo:'Fixa Felipe', categoria:'Seguro Celular', tipo:'mensal', valor_base:62, descricao:''},
+  {id:'aluguel_carro_manu', grupo:'Fixa Felipe', categoria:'Aluguel Carro Manu', tipo:'mensal', valor_base:120, descricao:''},
+  {id:'academia', grupo:'Fixa Felipe', categoria:'Academia', tipo:'mensal', valor_base:85, descricao:''},
+  {id:'basquete_sm', grupo:'Fixa Felipe', categoria:'Basquete Santa Mônica', tipo:'mensal', valor_base:62, descricao:''},
+  {id:'socio_basquete', grupo:'Fixa Felipe', categoria:'Sócio Basquete', tipo:'mensal', valor_base:30, descricao:''},
+  {id:'tuc', grupo:'Fixa Felipe', categoria:'TUC', tipo:'data_fixa', valor_base:60, ocorrencias:_rep(['2026-05','2026-08','2026-09','2026-10','2027-03','2027-04','2027-05','2027-08','2027-09','2027-10'], 60), descricao:'60 em 10 meses específicos'},
+  {id:'creatina', grupo:'Fixa Felipe', categoria:'Creatina', tipo:'anual_acrual', valor_base:170, orcamento_anual:{2026:453.33, 2027:680}, descricao:'170 cada, 4x por ano'},
+  {id:'whey', grupo:'Fixa Felipe', categoria:'Whey', tipo:'anual_acrual', valor_base:300, orcamento_anual:{2026:1200, 2027:1800}, descricao:'300 cada, 6x por ano'},
+  {id:'cortar_cabelo', grupo:'Fixa Felipe', categoria:'Cortar Cabelo', tipo:'mensal', valor_base:45, descricao:''},
+  {id:'almoco_trabalho', grupo:'Fixa Felipe', categoria:'Almoço Trabalho', tipo:'mensal', valor_base:70, descricao:''},
+  {id:'unitv', grupo:'Fixa Felipe', categoria:'UniTV', tipo:'data_fixa', valor_base:340, ocorrencias:[{chave_mes:'2026-12', valor:340}, {chave_mes:'2027-12', valor:340}], descricao:'Dez-26 e dez-27'},
+
+  // ====== FIXA MANU ======
+  {id:'seguro_carro_m', grupo:'Fixa Manu', categoria:'Seguro do Carro', tipo:'mensal', valor_base:214, descricao:''},
+  {id:'gympass', grupo:'Fixa Manu', categoria:'Gympass', tipo:'mensal', valor_base:199, descricao:''},
+  {id:'seguro_cel_m', grupo:'Fixa Manu', categoria:'Seguro Celular Manu', tipo:'mensal', valor_base:60, descricao:''},
+  {id:'ingles', grupo:'Fixa Manu', categoria:'Inglês', tipo:'data_fixa', valor_base:175, ocorrencias:[{chave_mes:'2026-05', valor:175}], descricao:'Só mai-26'},
+  {id:'frances', grupo:'Fixa Manu', categoria:'Francês', tipo:'data_fixa', valor_base:350, ocorrencias:_rep(['2026-05','2026-06','2026-07','2026-08','2026-09','2026-10','2026-11','2026-12'], 350), descricao:'Mai-dez 26'},
+  {id:'gasolina', grupo:'Fixa Manu', categoria:'Gasolina', tipo:'mensal', valor_base:400, descricao:''},
+  {id:'anuidade_bradesco', grupo:'Fixa Manu', categoria:'Anuidade Cartão Bradesco', tipo:'mensal', valor_base:10, descricao:''},
+  {id:'livelo', grupo:'Fixa Manu', categoria:'Livelo', tipo:'data_fixa', valor_base:45, ocorrencias:_rep(['2026-05','2026-06','2026-07','2026-08','2026-09'], 45), descricao:'Mai-set 26'},
+  {id:'unha', grupo:'Fixa Manu', categoria:'Unha', tipo:'mensal', valor_base:110, descricao:''},
+  {id:'sobrancelha', grupo:'Fixa Manu', categoria:'Sobrancelha', tipo:'mensal', valor_base:45, descricao:''},
+  {id:'depilacao', grupo:'Fixa Manu', categoria:'Depilação', tipo:'mensal', valor_base:100, descricao:''},
+  {id:'apple', grupo:'Fixa Manu', categoria:'Apple', tipo:'mensal', valor_base:20, descricao:''},
+  {id:'google', grupo:'Fixa Manu', categoria:'Google', tipo:'mensal', valor_base:20, descricao:''},
+  {id:'conta_celular', grupo:'Fixa Manu', categoria:'Conta Celular', tipo:'mensal', valor_base:60, descricao:''},
+
+  // ====== VARIÁVEL ======
+  {id:'cfa', grupo:'Variável', categoria:'CFA', tipo:'data_fixa', valor_base:6495, ocorrencias:[{chave_mes:'2027-05', valor:6495}], descricao:''},
+  {id:'aniv_namoro_rest', grupo:'Variável', categoria:'Aniv Namoro - Restaurante', tipo:'data_fixa', valor_base:600, ocorrencias:[{chave_mes:'2027-03', valor:600}], descricao:''},
+  {id:'aniv_namoro_fm', grupo:'Variável', categoria:'Aniv Namoro - Presente F→M', tipo:'data_fixa', valor_base:500, ocorrencias:[{chave_mes:'2027-03', valor:500}], descricao:''},
+  {id:'aniv_namoro_mf', grupo:'Variável', categoria:'Aniv Namoro - Presente M→F', tipo:'data_fixa', valor_base:400, ocorrencias:[{chave_mes:'2027-03', valor:400}], descricao:''},
+  {id:'dia_namorados_rest', grupo:'Variável', categoria:'Dia Namorados - Restaurante', tipo:'data_fixa', valor_base:600, ocorrencias:_rep(['2026-06','2027-06'], 600), descricao:''},
+  {id:'dia_namorados_fm', grupo:'Variável', categoria:'Dia Namorados - Presente F→M', tipo:'data_fixa', valor_base:500, ocorrencias:_rep(['2026-06','2027-06'], 500), descricao:''},
+  {id:'dia_namorados_mf', grupo:'Variável', categoria:'Dia Namorados - Presente M→F', tipo:'data_fixa', valor_base:400, ocorrencias:_rep(['2026-06','2027-06'], 400), descricao:''},
+  {id:'aniv_manu_rest', grupo:'Variável', categoria:'Aniv Manu - Restaurante', tipo:'data_fixa', valor_base:1000, ocorrencias:_rep(['2026-06','2027-06'], 1000), descricao:''},
+  {id:'aniv_manu_pres', grupo:'Variável', categoria:'Aniv Manu - Presente', tipo:'data_fixa', valor_base:1000, ocorrencias:_rep(['2026-06','2027-06'], 1000), descricao:''},
+  {id:'aniv_felipe_rest', grupo:'Variável', categoria:'Aniv Felipe - Restaurante', tipo:'data_fixa', valor_base:1000, ocorrencias:_rep(['2026-12','2027-12'], 1000), descricao:''},
+  {id:'aniv_felipe_pres', grupo:'Variável', categoria:'Aniv Felipe - Presente', tipo:'data_fixa', valor_base:1000, ocorrencias:_rep(['2026-12','2027-12'], 1000), descricao:''},
+  {id:'ovo_manu', grupo:'Variável', categoria:'Ovo de Páscoa Manu', tipo:'data_fixa', valor_base:150, ocorrencias:[{chave_mes:'2027-03', valor:150}], descricao:''},
+  {id:'ovo_felipe', grupo:'Variável', categoria:'Ovo de Páscoa Felipe', tipo:'data_fixa', valor_base:100, ocorrencias:[{chave_mes:'2027-03', valor:100}], descricao:''},
+  {id:'natal_fm', grupo:'Variável', categoria:'Natal - Presente F→M', tipo:'data_fixa', valor_base:400, ocorrencias:_rep(['2026-12','2027-12'], 400), descricao:''},
+  {id:'natal_mf', grupo:'Variável', categoria:'Natal - Presente M→F', tipo:'data_fixa', valor_base:400, ocorrencias:_rep(['2026-12','2027-12'], 400), descricao:''},
+  {id:'panettone', grupo:'Variável', categoria:'Panettone Manu', tipo:'data_fixa', valor_base:150, ocorrencias:[{chave_mes:'2027-12', valor:150}], descricao:''},
+  {id:'pres_julio', grupo:'Variável', categoria:'Presente Julio', tipo:'data_fixa', valor_base:150, ocorrencias:[{chave_mes:'2026-08', valor:150},{chave_mes:'2026-10', valor:300},{chave_mes:'2027-08', valor:150},{chave_mes:'2027-10', valor:300}], descricao:''},
+  {id:'pres_juliana', grupo:'Variável', categoria:'Presente Juliana', tipo:'data_fixa', valor_base:150, ocorrencias:[{chave_mes:'2026-05', valor:150},{chave_mes:'2027-01', valor:300},{chave_mes:'2027-05', valor:150}], descricao:''},
+  {id:'pres_anabela', grupo:'Variável', categoria:'Presente Anabela', tipo:'data_fixa', valor_base:150, ocorrencias:[{chave_mes:'2026-05', valor:150},{chave_mes:'2026-11', valor:400},{chave_mes:'2027-05', valor:150},{chave_mes:'2027-11', valor:400}], descricao:''},
+  {id:'pres_pedro', grupo:'Variável', categoria:'Presente Pedro', tipo:'data_fixa', valor_base:150, ocorrencias:[{chave_mes:'2027-02', valor:150}], descricao:''},
+  {id:'pres_fernanda', grupo:'Variável', categoria:'Presente Fernanda', tipo:'data_fixa', valor_base:150, ocorrencias:_rep(['2026-10','2027-10'], 150), descricao:''},
+  {id:'pres_rapha', grupo:'Variável', categoria:'Presente Rapha', tipo:'data_fixa', valor_base:150, ocorrencias:_rep(['2026-11','2027-11'], 150), descricao:''},
+  {id:'pres_stella', grupo:'Variável', categoria:'Presente Stella', tipo:'data_fixa', valor_base:150, ocorrencias:[{chave_mes:'2027-04', valor:150}], descricao:''},
+  {id:'pres_victor', grupo:'Variável', categoria:'Presente Victor', tipo:'data_fixa', valor_base:150, ocorrencias:_rep(['2026-09','2027-09'], 150), descricao:''},
+  {id:'pres_ju', grupo:'Variável', categoria:'Presente Ju', tipo:'data_fixa', valor_base:150, ocorrencias:_rep(['2026-12','2027-12'], 150), descricao:''},
+  {id:'pres_jana', grupo:'Variável', categoria:'Presente Jana', tipo:'data_fixa', valor_base:150, ocorrencias:_rep(['2026-10','2027-10'], 150), descricao:''},
+  {id:'extras_lazer', grupo:'Variável', categoria:'Extras/Lazer', tipo:'semanal', valor_base:300, descricao:'300 por semana + compras imprevistas'},
+  {id:'ano_novo', grupo:'Variável', categoria:'Ano Novo', tipo:'data_fixa', valor_base:2000, ocorrencias:_rep(['2026-12','2027-12'], 2000), descricao:''},
+  {id:'jfin_tomate', grupo:'Variável', categoria:'JFIN / Festa do Tomate', tipo:'data_fixa', valor_base:1000, ocorrencias:_rep(['2026-06','2027-06'], 1000), descricao:''},
+  {id:'nfl', grupo:'Variável', categoria:'NFL 2026', tipo:'data_fixa', valor_base:1000, ocorrencias:[{chave_mes:'2026-09', valor:1000}], descricao:''},
+  {id:'rock_rio', grupo:'Variável', categoria:'Rock in Rio 2026', tipo:'data_fixa', valor_base:150, ocorrencias:[{chave_mes:'2026-09', valor:150}], descricao:''},
+  {id:'pascoa_terc', grupo:'Variável', categoria:'Páscoa - Presentes Terceiros', tipo:'data_fixa', valor_base:300, ocorrencias:[{chave_mes:'2027-03', valor:300}], descricao:''},
+];
+
+// Wifi ocorrencias precisa merge, corrige aqui:
+BUDGET_DESPESAS_SEED.find(d => d.id === 'wifi').ocorrencias = (function() {
+  const o = [{chave_mes:'2026-05', valor:210},{chave_mes:'2026-06', valor:60},{chave_mes:'2026-07', valor:60},{chave_mes:'2026-08', valor:60}];
+  ['2026-09','2026-10','2026-11','2026-12','2027-01','2027-02','2027-03','2027-04','2027-05','2027-06','2027-07','2027-08','2027-09','2027-10','2027-11','2027-12'].forEach(m => o.push({chave_mes:m, valor:100}));
+  return o;
+})();
+
+// ==========================================================
+// BUDGET DE RECEITAS (SEED)
+// ==========================================================
+
+function gerarBudgetReceitasSeed() {
+  const r = [];
+  let idC = 0;
+  const add = (pessoa, categoria, chave_mes, valor) => r.push({id:`rec_${idC++}`, pessoa, categoria, chave_mes, valor_orcado: valor});
+  SEMANAS_MES.forEach(m => {
+    add('Felipe', 'Salário', m.chave_mes, 4457.30);
+    add('Felipe', 'VR', m.chave_mes, m.dias_uteis * 55);
+    add('Felipe', 'VA', m.chave_mes, 690);
+    add('Manuella', 'Salário', m.chave_mes, 2000);
+    add('Manuella', 'VA', m.chave_mes, 920);
+  });
+  add('Felipe', '13º e 14º', '2026-06', 4246);
+  add('Felipe', '13º e 14º', '2026-12', 4246);
+  add('Felipe', 'Auxílio Natal', '2026-12', 730);
+  add('Felipe', '13º e 14º', '2027-06', 4457.30);
+  add('Felipe', '13º e 14º', '2027-12', 4457.30);
+  add('Felipe', 'Auxílio Natal', '2027-12', 730);
+  add('Manuella', 'Auxílio Natal', '2026-12', 500);
+  add('Manuella', 'Auxílio Natal', '2027-12', 500);
+  return r;
+}
+
+// ==========================================================
+// 2. ESTADO (carregado de localStorage)
+// ==========================================================
+
+const STORAGE_KEY = 'orcamento_casal_v1';
+
+function defaultState() {
+  return {
+    config: {
+      mes_ativo: '2026-05',
+      usuario_ativo: 'Felipe',
+      sync_url: '', // URL do Apps Script pra sincronização na nuvem
+    },
+    ui: {
+      grupos_fechados: [],
+      grupos_fechados_receitas: [],
+      grupos_fechados_dashboard: [],
+      filtrar_mes: false,
+    },
+    budget_despesas: JSON.parse(JSON.stringify(BUDGET_DESPESAS_SEED)),
+    budget_receitas: gerarBudgetReceitasSeed(),
+    lancamentos: [],          // {id, data, autor, categoria_id, valor, descricao}
+    lancamentos_receitas: [], // {id, data, pessoa, categoria, valor, descricao}
+    pl_felipe: {
+      ativos: [
+        {item:'Conta Bradesco', tipo:'caixa', valor:0},
+        {item:'XP Investimentos', tipo:'invest', valor:0},
+        {item:'VR (cartão benefício)', tipo:'caixa', valor:0},
+        {item:'VA (cartão benefício)', tipo:'caixa', valor:0},
+      ],
+      passivos: [
+        {item:'Fatura Cartão Nubank', valor:0},
+      ],
+    },
+    pl_manu: {
+      ativos: [
+        {item:'Conta Corrente', tipo:'caixa', valor:0},
+        {item:'Investimentos', tipo:'invest', valor:0},
+        {item:'VA (cartão benefício)', tipo:'caixa', valor:0},
+      ],
+      passivos: [
+        {item:'Fatura Cartão Bradesco', valor:0},
+      ],
+    },
+    historico: [],
+    historico_pl: [], // snapshots do PL ao longo do tempo (1 por dia)
+  };
+}
+
+let STATE = loadState();
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      const s = JSON.parse(raw);
+      // merge simples se faltar algum campo novo
+      const def = defaultState();
+      const merged = {...def, ...s, config: {...def.config, ...s.config}, ui: {...def.ui, ...(s.ui||{})}};
+      // Migrações
+      if (merged.budget_receitas) merged.budget_receitas.forEach(r => {
+        if (r.categoria === '13º' || r.categoria === '14º') r.categoria = '13º e 14º';
+      });
+      if (merged.lancamentos_receitas) merged.lancamentos_receitas.forEach(r => {
+        if (r.categoria === '13º' || r.categoria === '14º') r.categoria = '13º e 14º';
+      });
+      // Garante Auxílio Natal da Manuella
+      [['2026-12', 500], ['2027-12', 500]].forEach(([mes, val]) => {
+        const jaTem = merged.budget_receitas.find(r => r.pessoa === 'Manuella' && r.categoria === 'Auxílio Natal' && r.chave_mes === mes);
+        if (!jaTem) merged.budget_receitas.push({id:'rec_aux_manu_'+mes, pessoa:'Manuella', categoria:'Auxílio Natal', chave_mes:mes, valor_orcado:val});
+      });
+      // Remove Bônus de orçamento e de lançamentos realizados
+      if (merged.budget_receitas) merged.budget_receitas = merged.budget_receitas.filter(r => r.categoria !== 'Bônus');
+      if (merged.lancamentos_receitas) merged.lancamentos_receitas = merged.lancamentos_receitas.filter(r => r.categoria !== 'Bônus');
+      // Remove categoria "Outros" (extras/lazer agora absorve estouros)
+      if (merged.budget_despesas) {
+        merged.budget_despesas = merged.budget_despesas.filter(d => d.id !== 'outros');
+      }
+      // Reordena budget_despesas na ordem do SEED (preservando edições do usuário) + custom do usuário no final
+      const seedIds = new Set(BUDGET_DESPESAS_SEED.map(s => s.id));
+      const stateById = new Map((merged.budget_despesas || []).map(d => [d.id, d]));
+      const customUsuario = (merged.budget_despesas || []).filter(d => !seedIds.has(d.id));
+      const novoBudget = [];
+      BUDGET_DESPESAS_SEED.forEach(seedD => {
+        if (stateById.has(seedD.id)) novoBudget.push(stateById.get(seedD.id));
+        else novoBudget.push(JSON.parse(JSON.stringify(seedD)));
+      });
+      customUsuario.forEach(c => novoBudget.push(c));
+      merged.budget_despesas = novoBudget;
+      return merged;
+    }
+  } catch(e) { console.warn('load fail', e); }
+  return defaultState();
+}
+
+function saveStateLocal() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(STATE));
+}
+
+let syncTimer = null;
+let syncStatus = 'idle'; // idle | syncing | ok | error | off
+function setSyncStatus(s) { syncStatus = s; atualizarStatusBar(); }
+
+function saveState() {
+  saveStateLocal();
+  statusMsg('Salvo local ' + new Date().toLocaleTimeString('pt-BR'));
+  if (STATE.config?.sync_url) {
+    if (syncTimer) clearTimeout(syncTimer);
+    syncTimer = setTimeout(syncUpload, 1500);
+  }
+}
+
+async function syncUpload() {
+  if (!STATE.config?.sync_url) { setSyncStatus('off'); return; }
+  setSyncStatus('syncing');
+  try {
+    await fetch(STATE.config.sync_url, {
+      method: 'POST',
+      mode: 'cors',
+      // text/plain evita preflight CORS no Apps Script
+      headers: {'Content-Type': 'text/plain;charset=utf-8'},
+      body: JSON.stringify(STATE),
+    });
+    setSyncStatus('ok');
+  } catch (e) {
+    console.error('sync upload fail', e);
+    setSyncStatus('error');
+  }
+}
+
+async function syncDownload(silencioso) {
+  if (!STATE.config?.sync_url) { setSyncStatus('off'); return false; }
+  setSyncStatus('syncing');
+  try {
+    const res = await fetch(STATE.config.sync_url + '?t=' + Date.now(), {method:'GET', mode:'cors'});
+    const text = (await res.text()).trim();
+    if (!text || text === 'null' || text === '{}') {
+      setSyncStatus('ok');
+      if (!silencioso) alert('A nuvem está vazia. Use "Enviar pra nuvem" uma vez pra subir os dados locais.');
+      return false;
+    }
+    const remote = JSON.parse(text);
+    if (remote && typeof remote === 'object' && remote.config) {
+      STATE = remote;
+      saveStateLocal();
+      setSyncStatus('ok');
+      if (!silencioso) statusMsg('Baixado da nuvem');
+      return true;
+    }
+    setSyncStatus('error');
+    return false;
+  } catch (e) {
+    console.error('sync download fail', e);
+    setSyncStatus('error');
+    if (!silencioso) alert('Erro ao baixar da nuvem: ' + e.message);
+    return false;
+  }
+}
+
+function atualizarStatusBar() {
+  const el = document.getElementById('statusBar');
+  if (!el) return;
+  const hora = new Date().toLocaleTimeString('pt-BR');
+  const icones = {
+    idle: '💾 local apenas',
+    syncing: '⏳ sincronizando...',
+    ok: '☁️ sincronizado ' + hora,
+    error: '⚠️ erro de sync — usando local',
+    off: '💾 sem nuvem configurada',
+  };
+  el.textContent = icones[syncStatus] || 'pronto';
+}
+
+// ==========================================================
+// 3. FUNÇÕES DERIVADAS (CÁLCULOS)
+// ==========================================================
+
+function fmt(n) {
+  if (n === null || n === undefined || isNaN(n)) return '—';
+  return Number(n).toLocaleString('pt-BR', {minimumFractionDigits: 0, maximumFractionDigits: 0});
+}
+// Formata pra input editável com separador de milhar (#.##0)
+function formatNum(n) {
+  if (n === null || n === undefined || n === '' || isNaN(Number(n))) return '';
+  return Math.round(Number(n)).toLocaleString('pt-BR');
+}
+// Converte "4.500" ou "4500" ou "4.500,30" de volta pra número
+function parseNum(s) {
+  if (s === null || s === undefined || s === '') return 0;
+  s = String(s).trim().replace(/\./g, '').replace(',', '.');
+  const n = parseFloat(s);
+  return isNaN(n) ? 0 : n;
+}
+function fmtSign(n) {
+  if (n === null || n === undefined || isNaN(n)) return '—';
+  const s = n >= 0 ? '+' : '';
+  return s + fmt(n);
+}
+
+function tipoLabel(tipo) {
+  return {
+    mensal: 'Mensal',
+    semanal: 'Semanal',
+    anual_acrual: 'Acrua Anualmente',
+    data_fixa: 'Data Fixa/Específica'
+  }[tipo] || tipo;
+}
+
+function tipoExplicacao(tipo) {
+  const info = {
+    mensal: {
+      titulo: tipoLabel('mensal'),
+      desc: 'Valor igual em <strong>todos os meses</strong>. Reseta dia 1.',
+      estourou: 'Excedente consome o saldo de <strong>Extras/Lazer</strong> do mês. Se Extras/Lazer zerar, vira alerta vermelho (mas não bloqueia).',
+      faltou: 'Sobra do mês <strong>vira economia</strong> — fica no caixa de quem pagou, entra no PL. Não acumula pro mês seguinte.',
+      ex: 'Ex: Condomínio R$ 850/mês, Academia R$ 85/mês.'
+    },
+    anual_acrual: {
+      titulo: tipoLabel('anual_acrual'),
+      desc: 'Meta é <strong>anual, não mensal</strong>. O valor mensal mostrado é só o ritmo médio (orçado anual ÷ meses). Reseta em janeiro.',
+      estourou: 'Estouro em um mês <strong>NÃO consome Extras/Lazer</strong> — é absorvido pelo próprio bucket anual. Só vira alerta se o <strong>YTD (acumulado do ano)</strong> ultrapassar o orçamento anual.',
+      faltou: 'Sobra do mês <strong>acumula automaticamente</strong> pros meses seguintes dentro do mesmo ano. Em dezembro, se ainda sobrou, vira economia do ano.',
+      ex: 'Ex: Luz R$ 7.200/ano — paga 800 no verão, 400 no inverno, e no saldo do ano fecha a meta. Ração 2.400/ano comprada em 6 lotes avulsos.'
+    },
+    data_fixa: {
+      titulo: tipoLabel('data_fixa'),
+      desc: 'Acontece em <strong>meses específicos</strong>, com valor próprio em cada um. Cadastre as ocorrências na tabela abaixo.',
+      estourou: 'Excedente consome o saldo de <strong>Extras/Lazer</strong> do mês (igual mensal).',
+      faltou: 'Sobra do mês <strong>vira economia</strong>. Se não lançar nada no mês cadastrado (ex: IPTU que nem aconteceu), o valor orçado inteiro vira economia/investimento.',
+      ex: 'Ex: IPTU R$ 800 só em fev-27. Francês R$ 350 de mai a dez 2026. UniTV R$ 340 em dez-26 e dez-27.'
+    },
+    semanal: {
+      titulo: tipoLabel('semanal'),
+      desc: 'Orçamento mensal = <strong>valor base × número de semanas do mês</strong> (4 ou 5, conforme a aba Config). Reseta dia 1.',
+      estourou: 'Excedente consome o saldo de <strong>Extras/Lazer</strong> do mês.',
+      faltou: 'Sobra do mês <strong>vira economia</strong>. Não acumula pro mês seguinte.',
+      ex: 'Ex: Mercado+Farmácia R$ 400/sem = R$ 2.000 num mês de 5 semanas, R$ 1.600 num de 4.'
+    }
+  };
+  const i = info[tipo] || {titulo:'?', desc:'Tipo desconhecido', estourou:'', faltou:'', ex:''};
+  return `
+    <div><strong>${i.titulo}</strong> — ${i.desc}</div>
+    <div class="tipo-regras">
+      <div class="regra"><span class="regra-label regra-estourou">Se estourar:</span> ${i.estourou}</div>
+      <div class="regra"><span class="regra-label regra-faltou">Se faltar:</span> ${i.faltou}</div>
+    </div>
+    <span class="ex">${i.ex}</span>
+  `;
+}
+
+function calcOrcamentoAnual(d, ano) {
+  if (d.tipo !== 'anual_acrual') return 0;
+  const freq = d.frequencia_anual;
+  if (freq != null && !isNaN(freq)) {
+    const mesesDoAno = mesesAno(ano).length;
+    // Orçamento do ano = valor_base × freq × (meses orçados / 12)
+    // Em 2026 (8 meses orçados), é proporcional.
+    // Em 2027 (12 meses), é cheio.
+    return Number(d.valor_base) * Number(freq) * (mesesDoAno / 12);
+  }
+  // Fallback: orçamento_anual salvo explicitamente (dados antigos)
+  return d.orcamento_anual?.[ano] || 0;
+}
+
+function ritmoAnualMensal(despesa, ano) {
+  const anual = calcOrcamentoAnual(despesa, ano);
+  const meses = mesesAno(ano).length;
+  return meses > 0 ? anual / meses : 0;
+}
+
+function orcadoMesCategoria(despesa, chave_mes) {
+  const mesData = SEMANAS_MES.find(m => m.chave_mes === chave_mes);
+  if (!mesData) return 0;
+  switch(despesa.tipo) {
+    case 'mensal':
+      return despesa.valor_base;
+    case 'semanal':
+      return despesa.valor_base * mesData.semanas;
+    case 'data_fixa': {
+      const o = (despesa.ocorrencias || []).find(x => x.chave_mes === chave_mes);
+      return o ? o.valor : 0;
+    }
+    case 'anual_acrual':
+      return ritmoAnualMensal(despesa, mesData.ano);
+    default: return 0;
+  }
+}
+
+function realizadoMesCategoria(categoria_id, chave_mes) {
+  return STATE.lancamentos
+    .filter(l => l.categoria_id === categoria_id && l.data.startsWith(chave_mes))
+    .reduce((s, l) => s + Number(l.valor), 0);
+}
+
+function realizadoYTD(categoria_id, ano) {
+  return STATE.lancamentos
+    .filter(l => l.categoria_id === categoria_id && l.data.startsWith(String(ano) + '-'))
+    .reduce((s, l) => s + Number(l.valor), 0);
+}
+
+function realizadoReceitaMes(pessoa, categoria, chave_mes) {
+  return STATE.lancamentos_receitas
+    .filter(r => r.pessoa === pessoa && r.categoria === categoria && r.data.startsWith(chave_mes))
+    .reduce((s, r) => s + Number(r.valor), 0);
+}
+
+function orcadoTotalDespesasMes(chave_mes) {
+  return STATE.budget_despesas.reduce((s, d) => s + orcadoMesCategoria(d, chave_mes), 0);
+}
+
+function realizadoTotalDespesasMes(chave_mes) {
+  return STATE.lancamentos
+    .filter(l => l.data.startsWith(chave_mes))
+    .reduce((s, l) => s + Number(l.valor), 0);
+}
+
+function orcadoTotalReceitasMes(chave_mes) {
+  return STATE.budget_receitas.filter(r => r.chave_mes === chave_mes).reduce((s, r) => s + Number(r.valor_orcado), 0);
+}
+
+function realizadoTotalReceitasMes(chave_mes) {
+  return STATE.lancamentos_receitas
+    .filter(r => r.data.startsWith(chave_mes))
+    .reduce((s, r) => s + Number(r.valor), 0);
+}
+
+function plPessoa(pl) {
+  const ativos = pl.ativos.reduce((s, a) => s + Number(a.valor), 0);
+  const passivos = pl.passivos.reduce((s, p) => s + Number(p.valor), 0);
+  return ativos - passivos;
+}
+function plFelipe() { return plPessoa(STATE.pl_felipe); }
+function plManu() { return plPessoa(STATE.pl_manu); }
+function plCasal() { return plFelipe() + plManu(); }
+
+// Registra snapshot diário do PL (1 entrada por dia, sobrescreve se já existe)
+function registrarSnapshotPL() {
+  STATE.historico_pl = STATE.historico_pl || [];
+  const hoje = new Date().toISOString().slice(0,10);
+  const agora = new Date().toISOString();
+  const snapshot = {
+    data: hoje,
+    timestamp: agora,
+    pl_felipe: plFelipe(),
+    pl_manu: plManu(),
+    pl_casal: plCasal(),
+  };
+  const idx = STATE.historico_pl.findIndex(s => s.data === hoje);
+  if (idx >= 0) STATE.historico_pl[idx] = snapshot;
+  else STATE.historico_pl.push(snapshot);
+}
+
+// Saldo orçamentário pendente entre mes_ativo e horizonte (inclusive)
+function saldoPendenteAte(chave_fim) {
+  const ma = STATE.config.mes_ativo;
+  const meses = mesesEntre(ma, chave_fim);
+  let recPend = 0, despPend = 0;
+  meses.forEach(m => {
+    // Receitas
+    STATE.budget_receitas.filter(r => r.chave_mes === m).forEach(r => {
+      const rec = realizadoReceitaMes(r.pessoa, r.categoria, m);
+      if (m === ma) {
+        recPend += Math.max(0, r.valor_orcado - rec);
+      } else {
+        recPend += Number(r.valor_orcado);
+      }
+    });
+    // Despesas
+    STATE.budget_despesas.forEach(d => {
+      const orc = orcadoMesCategoria(d, m);
+      const rea = realizadoMesCategoria(d.id, m);
+      if (m === ma) {
+        despPend += Math.max(0, orc - rea);
+      } else {
+        despPend += orc;
+      }
+    });
+  });
+  return recPend - despPend;
+}
+
+function plProjetadoHorizonte(chave_fim) {
+  return plCasal() + saldoPendenteAte(chave_fim);
+}
+
+// Calcula quanto foi absorvido de Extras/Lazer por estouros de outras categorias
+function absorvidoExtrasMes(chave_mes) {
+  let absorvido = 0;
+  // 1) Estouros mensais de categorias mensal/data_fixa/semanal
+  STATE.budget_despesas.forEach(d => {
+    if (d.id === 'extras_lazer') return;
+    if (d.tipo === 'mensal' || d.tipo === 'data_fixa' || d.tipo === 'semanal') {
+      const o = orcadoMesCategoria(d, chave_mes);
+      const r = realizadoMesCategoria(d.id, chave_mes);
+      if (r > o) absorvido += (r - o);
+    }
+  });
+  // 2) Estouros anuais de categorias acrua anualmente — rateio uniforme pelos meses do ano
+  const mesData = SEMANAS_MES.find(m => m.chave_mes === chave_mes);
+  if (mesData) {
+    const ano = mesData.ano;
+    const nMesesAno = mesesAno(ano).length;
+    if (nMesesAno > 0) {
+      STATE.budget_despesas.forEach(d => {
+        if (d.tipo !== 'anual_acrual') return;
+        const anual = d.orcamento_anual?.[ano] || 0;
+        const ytd = realizadoYTD(d.id, ano);
+        if (anual > 0 && ytd > anual) {
+          absorvido += (ytd - anual) / nMesesAno;
+        }
+      });
+    }
+  }
+  return absorvido;
+}
+
+// Extras/Lazer: saldo do mês (absorve estouros das outras categorias)
+function saldoExtrasLazerMes(chave_mes) {
+  const extras = STATE.budget_despesas.find(d => d.id === 'extras_lazer');
+  if (!extras) return 0;
+  const orcado = orcadoMesCategoria(extras, chave_mes);
+  const realExtras = realizadoMesCategoria('extras_lazer', chave_mes);
+  return orcado - realExtras - absorvidoExtrasMes(chave_mes);
+}
+
+// ==========================================================
+// 4. NAVEGAÇÃO E RENDER
+// ==========================================================
+
+const VIEWS = [
+  {id:'dashboard', label:'📊 Dashboard'},
+  {id:'lancamentos', label:'📝 Lançamentos'},
+  {id:'orcamento', label:'📋 Orçamento'},
+  {id:'patrimonio', label:'💎 Patrimônio'},
+  {id:'pl_projetado', label:'📈 Projeções'},
+  {id:'historico', label:'🕐 Histórico'},
+  {id:'config', label:'⚙️ Config'},
+];
+
+let VIEW_ATUAL = 'dashboard';
+
+function renderNav() {
+  document.getElementById('nav').innerHTML = VIEWS.map(v =>
+    `<button data-view="${v.id}" class="${v.id === VIEW_ATUAL ? 'active':''}" onclick="app.navigate('${v.id}')">${v.label}</button>`
+  ).join('');
+}
+
+function renderHeader() {
+  const selMes = document.getElementById('selMes');
+  selMes.innerHTML = SEMANAS_MES.map(m =>
+    `<option value="${m.chave_mes}" ${m.chave_mes === STATE.config.mes_ativo ? 'selected' : ''}>${m.mes_nome}</option>`
+  ).join('');
+  selMes.onchange = e => { STATE.config.mes_ativo = e.target.value; saveState(); render(); };
+}
+
+function render() {
+  renderNav();
+  renderHeader();
+  const main = document.getElementById('app');
+  const view = VIEWS_FN[VIEW_ATUAL] || VIEWS_FN.dashboard;
+  main.innerHTML = view();
+}
+
+function statusMsg(msg) {
+  document.getElementById('statusBar').textContent = msg;
+}
+
+// ==========================================================
+// 5. VIEWS
+// ==========================================================
+
+const VIEWS_FN = {};
+
+// ----- DASHBOARD -----
+VIEWS_FN.dashboard = function() {
+  const ma = STATE.config.mes_ativo;
+  const mesInfo = SEMANAS_MES.find(m => m.chave_mes === ma);
+  const recO = orcadoTotalReceitasMes(ma);
+  const recR = realizadoTotalReceitasMes(ma);
+  const despO = orcadoTotalDespesasMes(ma);
+  const despR = realizadoTotalDespesasMes(ma);
+  const resultO = recO - despO;
+  const resultR = recR - despR;
+  const pctDespesa = despO > 0 ? (despR / despO * 100) : 0;
+  const pctReceita = recO > 0 ? (recR / recO * 100) : 0;
+  const outrosSaldo = saldoExtrasLazerMes(ma);
+
+  // Alertas
+  const alertas = [];
+  STATE.budget_despesas.forEach(d => {
+    if (d.tipo === 'mensal' || d.tipo === 'data_fixa' || d.tipo === 'semanal') {
+      const o = orcadoMesCategoria(d, ma);
+      const r = realizadoMesCategoria(d.id, ma);
+      if (r > o && o > 0) alertas.push({tipo:'warn', msg:`${d.categoria} estourou R$ ${fmt(r-o)} → cobre de Extras/Lazer`});
+    }
+    if (d.tipo === 'anual_acrual') {
+      const ano = mesInfo.ano;
+      const anual = d.orcamento_anual?.[ano] || 0;
+      if (anual > 0) {
+        const ytd = realizadoYTD(d.id, ano);
+        const mesesAnoAteAgora = mesesAno(ano).filter(m => m <= ma).length;
+        const mesesTotais = mesesAno(ano).length;
+        if (mesesTotais > 0 && mesesAnoAteAgora > 0) {
+          const ritmoEsperado = anual * (mesesAnoAteAgora / mesesTotais);
+          if (ritmoEsperado > 0 && ytd > ritmoEsperado * 1.15) {
+            alertas.push({tipo:'warn', msg:`${d.categoria}: YTD R$${fmt(ytd)} vs esperado R$${fmt(ritmoEsperado)} (adiantado ${((ytd/ritmoEsperado-1)*100).toFixed(0)}%)`});
+          }
+        }
+      }
+    }
+  });
+  if (outrosSaldo < 0) {
+    alertas.push({tipo:'bad', msg:`Extras/Lazer zerou e estourou em R$ ${fmt(-outrosSaldo)} — estouro real no mês`});
+  }
+
+  return `
+    <h2>Dashboard — ${mesInfo.mes_nome}</h2>
+    <div class="cards">
+      <div class="card ${recO > 0 && recR >= recO ? 'good' : ''}">
+        <div class="label">Receita Realizada</div>
+        <div class="value">R$ ${fmt(recR)}</div>
+        <div class="sub">Orçada: R$ ${fmt(recO)} (${pctReceita.toFixed(0)}%)</div>
+        <div class="bar"><div class="bar-fill" style="width:${Math.min(100, pctReceita)}%"></div></div>
+      </div>
+      <div class="card ${pctDespesa > 100 ? 'bad' : pctDespesa > 85 ? 'warn' : ''}">
+        <div class="label">Despesa Realizada</div>
+        <div class="value">R$ ${fmt(despR)}</div>
+        <div class="sub">Orçada: R$ ${fmt(despO)} (${pctDespesa.toFixed(0)}%)</div>
+        <div class="bar"><div class="bar-fill ${pctDespesa > 100 ? 'bad' : pctDespesa > 85 ? 'warn' : ''}" style="width:${Math.min(100, pctDespesa)}%"></div></div>
+      </div>
+      <div class="card ${resultR >= 0 ? 'good' : 'bad'}">
+        <div class="label">Resultado Realizado</div>
+        <div class="value">R$ ${fmt(resultR)}</div>
+        <div class="sub">Orçado: R$ ${fmt(resultO)}</div>
+      </div>
+      <div class="card">
+        <div class="label">Saldo Extras/Lazer</div>
+        <div class="value ${outrosSaldo < 0 ? 'num-bad':'num-good'}">R$ ${fmt(outrosSaldo)}</div>
+        <div class="sub">Folga do mês após absorver estouros</div>
+      </div>
+    </div>
+
+${alertas.length > 0 ? `
+    <div class="section">
+      <h3>⚠️ Alertas</h3>
+      ${alertas.map(a => `<div class="alert ${a.tipo==='bad'?'bad':''}">${a.msg}</div>`).join('')}
+    </div>` : ''}
+
+    <div class="section">
+      <h3>Consumo por categoria — ${mesInfo.mes_nome}</h3>
+      <table>
+        <thead><tr><th>Categoria</th><th class="num">Orçado</th><th class="num">Realizado</th><th class="num">Saldo</th><th>Status</th></tr></thead>
+        <tbody>
+          ${(function(){
+            const fechadosDash = STATE.ui?.grupos_fechados_dashboard || [];
+            const absorvido = absorvidoExtrasMes(ma);
+            return ['Fixa Felipe','Fixa Manu','Variável'].map(grupo => {
+              const despGrupo = STATE.budget_despesas.filter(d => d.grupo === grupo);
+              const fechado = fechadosDash.includes(grupo);
+              const linhas = despGrupo.map(d => {
+                const o = orcadoMesCategoria(d, ma);
+                let r = realizadoMesCategoria(d.id, ma);
+                // Extras/Lazer reflete o que foi absorvido de estouros de outras categorias
+                if (d.id === 'extras_lazer') r += absorvido;
+                const s = o - r;
+                if (o === 0 && r === 0) return null;
+                let status = 'ok', statusLabel = 'OK';
+                if (d.tipo === 'anual_acrual') {
+                  // Acrua Anualmente: mostra gasto YTD vs orçamento anual
+                  const ano = mesInfo.ano;
+                  const anual = d.orcamento_anual?.[ano] || 0;
+                  const ytd = realizadoYTD(d.id, ano);
+                  statusLabel = `Limite Anual: ${fmt(ytd)} / ${fmt(anual)}`;
+                  status = (anual > 0 && ytd > anual) ? 'estouro' : 'ok';
+                } else {
+                  // Outros tipos: saldo do mês
+                  if (o > 0 && r >= o) { status = 'estouro'; statusLabel = 'LIMITE ATINGIDO'; }
+                }
+                const hint = d.id === 'extras_lazer' && absorvido > 0 ? ` <span class="muted" style="font-size:11px">(+${fmt(absorvido)} absorvido)</span>` : '';
+                return `<tr>
+                  <td>${d.categoria}${hint}</td>
+                  <td class="num">${fmt(o)}</td>
+                  <td class="num">${fmt(r)}</td>
+                  <td class="num ${s < 0 ? 'num-bad' : ''}">${fmt(s)}</td>
+                  <td><span class="badge ${status}">${statusLabel}</span></td>
+                </tr>`;
+              }).filter(x => x !== null).join('');
+              if (!linhas) return '';
+              const header = `<tr style="background:var(--bg3);cursor:pointer" onclick="app.toggleGrupoDashboard('${grupo}')">
+                <td colspan="5" style="font-weight:700;color:var(--accent);padding:10px;font-size:12px;text-transform:uppercase;letter-spacing:0.5px">
+                  <span style="display:inline-block;width:16px">${fechado ? '▶' : '▼'}</span> ${grupo}
+                </td>
+              </tr>`;
+              return header + (fechado ? '' : linhas);
+            }).join('');
+          })()}
+        </tbody>
+      </table>
+    </div>
+  `;
+};
+
+// ----- LANÇAMENTOS (wrapper com sub-tabs) -----
+VIEWS_FN.lancamentos = function() {
+  const subtab = STATE.ui?.subtab_lancamentos || 'lancar_despesa';
+  let inner;
+  if (subtab === 'lancar_receita') inner = VIEWS_FN.lancar_receita();
+  else if (subtab === 'historico') inner = VIEWS_FN.lancamentos_historico();
+  else inner = VIEWS_FN.lancar_despesa();
+  return `
+    <div class="subtabs">
+      <button class="subtab ${subtab === 'lancar_despesa' ? 'active' : ''}" onclick="app.setSubtabLancamentos('lancar_despesa')">➕ Lançar Despesa</button>
+      <button class="subtab ${subtab === 'lancar_receita' ? 'active' : ''}" onclick="app.setSubtabLancamentos('lancar_receita')">💰 Lançar Receita</button>
+      <button class="subtab ${subtab === 'historico' ? 'active' : ''}" onclick="app.setSubtabLancamentos('historico')">📜 Histórico</button>
+    </div>
+    ${inner}
+  `;
+};
+
+// ----- LANÇAR DESPESA -----
+let gavetaAtiva = null;
+
+VIEWS_FN.lancar_despesa = function() {
+  const ma = STATE.config.mes_ativo;
+  const gavetas = ['Fixa Felipe', 'Fixa Manu', 'Variável'];
+  const cats = gavetaAtiva ? STATE.budget_despesas.filter(d => d.grupo === gavetaAtiva) : [];
+
+  return `
+    <h2>Lançar Despesa</h2>
+    <div class="gavetas">
+      ${gavetas.map(g => `<div class="gaveta ${gavetaAtiva === g ? 'active' : ''}" onclick="app.selectGaveta('${g}')">
+        <h3>${g}</h3>
+        <div class="sub">${STATE.budget_despesas.filter(d => d.grupo === g).length} categorias</div>
+      </div>`).join('')}
+    </div>
+
+    ${gavetaAtiva ? `
+    <div class="section">
+      <h3>Nova despesa em <em>${gavetaAtiva}</em></h3>
+      <form onsubmit="app.salvarLancamentoDespesa(event); return false;">
+        <div class="form-row">
+          <label>Categoria</label>
+          <select name="categoria_id" onchange="app.atualizarValorDespesa(this.form)" required>
+            <option value="">— escolha —</option>
+            ${cats.map(c => `<option value="${c.id}">${c.categoria}</option>`).join('')}
+          </select>
+        </div>
+        <div class="form-row">
+          <label>Mês</label>
+          <input type="month" name="data" value="${ma}" onchange="app.atualizarValorDespesa(this.form)" required>
+        </div>
+        <div class="form-row">
+          <label>Valor (R$)</label>
+          <input type="number" name="valor" step="0.01" min="0" required>
+        </div>
+        <div class="form-row">
+          <label>Autor</label>
+          <select name="autor">
+            <option value="Felipe" ${STATE.config.usuario_ativo==='Felipe'?'selected':''}>Felipe</option>
+            <option value="Manuella" ${STATE.config.usuario_ativo==='Manuella'?'selected':''}>Manuella</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <label>Descrição</label>
+          <input type="text" name="descricao" placeholder="(opcional)">
+        </div>
+        <div class="form-row">
+          <label></label>
+          <div><button type="submit" class="btn">Salvar lançamento</button></div>
+        </div>
+      </form>
+    </div>
+    ` : '<div class="muted" style="text-align:center;padding:30px">Escolha uma gaveta acima.</div>'}
+  `;
+};
+
+// ----- LANÇAR RECEITA -----
+VIEWS_FN.lancar_receita = function() {
+  const ma = STATE.config.mes_ativo;
+  const categoriasUnicas = [...new Set(STATE.budget_receitas.map(r => r.categoria))];
+
+  return `
+    <h2>Lançar Receita</h2>
+    <div class="section">
+      <form onsubmit="app.salvarLancamentoReceita(event); return false;">
+        <div class="form-row">
+          <label>Pessoa</label>
+          <select name="pessoa" onchange="app.atualizarValorReceita(this.form)" required>
+            <option value="Felipe">Felipe</option>
+            <option value="Manuella">Manuella</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <label>Categoria</label>
+          <select name="categoria" onchange="app.atualizarValorReceita(this.form)" required>
+            <option value="">— escolha —</option>
+            ${categoriasUnicas.map(c => `<option value="${c}">${c}</option>`).join('')}
+          </select>
+        </div>
+        <div class="form-row">
+          <label>Mês</label>
+          <input type="month" name="data" value="${ma}" onchange="app.atualizarValorReceita(this.form)" required>
+        </div>
+        <div class="form-row">
+          <label>Valor (R$)</label>
+          <input type="number" name="valor" step="0.01" min="0" required>
+        </div>
+        <div class="form-row">
+          <label>Descrição</label>
+          <input type="text" name="descricao" placeholder="(opcional)">
+        </div>
+        <div class="form-row">
+          <label></label>
+          <div><button type="submit" class="btn">Salvar receita</button></div>
+        </div>
+      </form>
+    </div>
+
+    <div class="section">
+      <h3>Receitas orçadas do mês ativo (${SEMANAS_MES.find(m=>m.chave_mes===ma).mes_nome})</h3>
+      <table>
+        <thead><tr><th>Pessoa</th><th>Categoria</th><th class="num">Orçado</th><th class="num">Realizado</th></tr></thead>
+        <tbody>
+          ${STATE.budget_receitas.filter(r => r.chave_mes === ma).map(r => {
+            const real = realizadoReceitaMes(r.pessoa, r.categoria, ma);
+            return `<tr><td>${r.pessoa}</td><td>${r.categoria}</td><td class="num">${fmt(r.valor_orcado)}</td><td class="num ${real >= r.valor_orcado ? 'num-good':''}">${fmt(real)}</td></tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+};
+
+// ----- ORÇAMENTO (wrapper com sub-tabs Despesas / Receitas) -----
+VIEWS_FN.orcamento = function() {
+  const subtab = STATE.ui?.subtab_orcamento || 'despesas';
+  const inner = subtab === 'receitas' ? VIEWS_FN.orcamento_receitas() : VIEWS_FN.orcamento_despesas();
+  return `
+    <div class="subtabs">
+      <button class="subtab ${subtab === 'despesas' ? 'active' : ''}" onclick="app.setSubtabOrcamento('despesas')">📉 Despesas</button>
+      <button class="subtab ${subtab === 'receitas' ? 'active' : ''}" onclick="app.setSubtabOrcamento('receitas')">📈 Receitas</button>
+    </div>
+    ${inner}
+  `;
+};
+
+// ----- ORÇAMENTO DESPESAS (matriz horizontal) -----
+VIEWS_FN.orcamento_despesas = function() {
+  const grupos = ['Fixa Felipe', 'Fixa Manu', 'Variável'];
+  const MESES = getMesesVisiveis();
+  const nMeses = MESES.length;
+  const nCols = 1 + nMeses + 3;
+  const filtrando = !!STATE.ui?.filtrar_mes;
+  const mesAtivoNome = SEMANAS_MES.find(m => m.chave_mes === STATE.config.mes_ativo)?.mes_nome || '';
+
+  let html = `
+    <h2>Orçamento de Despesas</h2>
+    <div style="display:flex;gap:12px;align-items:center;margin-bottom:12px;flex-wrap:wrap;justify-content:flex-end">
+      <button class="btn btn-small ${filtrando ? '' : 'ghost'}" onclick="app.toggleFiltroMes()">
+        ${filtrando ? `📅 Mostrando de ${mesAtivoNome} em diante` : '📅 Mostrar a partir do mês ativo'}
+      </button>
+    </div>
+    <div class="matrix-wrap">
+      <table class="matrix">
+        <thead>
+          <tr>
+            <th class="sticky-col">Categoria</th>
+            ${MESES.map(m => `<th class="num">${m.mes_nome}</th>`).join('')}
+            <th class="num tcol tcol-1">Total 2026</th>
+            <th class="num tcol tcol-2">Total 2027</th>
+            <th class="num tcol tcol-3">Total 26-27</th>
+          </tr>
+        </thead>
+        <tbody>`;
+
+  const fechados = STATE.ui?.grupos_fechados || [];
+  grupos.forEach(g => {
+    const despGrupo = STATE.budget_despesas.filter(d => d.grupo === g);
+    if (despGrupo.length === 0) return;
+    const fechado = fechados.includes(g);
+    html += `<tr class="group-header" onclick="app.toggleGrupo('${g}')" style="cursor:pointer">
+      <td colspan="${nCols}"><span style="display:inline-block;width:16px">${fechado ? '▶' : '▼'}</span> ${g}</td>
+    </tr>`;
+
+    const subMes = new Array(nMeses).fill(0);
+    despGrupo.forEach(d => {
+      const vals = MESES.map(m => orcadoMesCategoria(d, m.chave_mes));
+      vals.forEach((v, i) => subMes[i] += v);
+      if (fechado) return;
+      const t26 = vals.reduce((s,v,i) => s + (MESES[i].ano === 2026 ? v : 0), 0);
+      const t27 = vals.reduce((s,v,i) => s + (MESES[i].ano === 2027 ? v : 0), 0);
+      const tot = t26 + t27;
+      html += `<tr>
+        <td class="sticky-col"><a class="cat-link" onclick="app.abrirModalDespesa('${d.id}')">${d.categoria}</a></td>
+        ${vals.map(v => `<td class="num ${v === 0 ? 'zero':''}">${v === 0 ? '—' : fmt(v)}</td>`).join('')}
+        <td class="num tcol tcol-1">${fmt(t26)}</td>
+        <td class="num tcol tcol-2">${fmt(t27)}</td>
+        <td class="num tcol tcol-3">${fmt(tot)}</td>
+      </tr>`;
+    });
+
+    const sub26 = subMes.reduce((s,v,i) => s + (MESES[i].ano === 2026 ? v : 0), 0);
+    const sub27 = subMes.reduce((s,v,i) => s + (MESES[i].ano === 2027 ? v : 0), 0);
+    const subTot = sub26 + sub27;
+    html += `<tr class="subtotal-row">
+      <td class="sticky-col">Subtotal ${g}</td>
+      ${subMes.map(v => `<td class="num">${fmt(v)}</td>`).join('')}
+      <td class="num tcol tcol-1">${fmt(sub26)}</td>
+      <td class="num tcol tcol-2">${fmt(sub27)}</td>
+      <td class="num tcol tcol-3">${fmt(subTot)}</td>
+    </tr>`;
+  });
+
+  // Linha total por mês
+  const totalMes = MESES.map(m => orcadoTotalDespesasMes(m.chave_mes));
+  const totalMes2026 = MESES.reduce((s,m,i) => s + (m.ano === 2026 ? totalMes[i] : 0), 0);
+  const totalMes2027 = MESES.reduce((s,m,i) => s + (m.ano === 2027 ? totalMes[i] : 0), 0);
+  const totalGeral = totalMes2026 + totalMes2027;
+  html += `<tr class="total-row">
+    <td class="sticky-col"><strong>TOTAL</strong></td>
+    ${totalMes.map(v => `<td class="num">${fmt(v)}</td>`).join('')}
+    <td class="num tcol tcol-1">${fmt(totalMes2026)}</td>
+    <td class="num tcol tcol-2">${fmt(totalMes2027)}</td>
+    <td class="num tcol tcol-3">${fmt(totalGeral)}</td>
+  </tr>`;
+
+  html += `</tbody></table></div>
+    <div style="margin-top:12px"><button class="btn" onclick="app.addDespesa()">+ Nova categoria</button></div>`;
+  return html;
+};
+
+// ----- ORÇAMENTO RECEITAS (matriz horizontal) -----
+VIEWS_FN.orcamento_receitas = function() {
+  const MESES = getMesesVisiveis();
+  const nMeses = MESES.length;
+  const nCols = 1 + nMeses + 3;
+  const filtrando = !!STATE.ui?.filtrar_mes;
+  const mesAtivoNome = SEMANAS_MES.find(m => m.chave_mes === STATE.config.mes_ativo)?.mes_nome || '';
+  const linhasMap = new Map();
+  STATE.budget_receitas.forEach(r => {
+    const key = r.pessoa + '||' + r.categoria;
+    if (!linhasMap.has(key)) linhasMap.set(key, {pessoa: r.pessoa, categoria: r.categoria});
+  });
+  const linhas = Array.from(linhasMap.values());
+  const ORDEM_RECEITAS = ['Salário', 'VA', 'VR', '13º e 14º', 'Auxílio Natal'];
+  linhas.sort((a,b) => {
+    if (a.pessoa !== b.pessoa) return a.pessoa === 'Felipe' ? -1 : 1;
+    const ai = ORDEM_RECEITAS.indexOf(a.categoria);
+    const bi = ORDEM_RECEITAS.indexOf(b.categoria);
+    const ao = ai === -1 ? 999 : ai;
+    const bo = bi === -1 ? 999 : bi;
+    if (ao !== bo) return ao - bo;
+    return a.categoria.localeCompare(b.categoria);
+  });
+
+  let html = `
+    <h2>Orçamento de Receitas</h2>
+    <div style="display:flex;gap:12px;align-items:center;margin-bottom:12px;flex-wrap:wrap;justify-content:flex-end">
+      <button class="btn btn-small ${filtrando ? '' : 'ghost'}" onclick="app.toggleFiltroMes()">
+        ${filtrando ? `📅 Mostrando de ${mesAtivoNome} em diante` : '📅 Mostrar a partir do mês ativo'}
+      </button>
+    </div>
+    <div class="matrix-wrap">
+      <table class="matrix">
+        <thead>
+          <tr>
+            <th class="sticky-col">Pessoa · Categoria</th>
+            ${MESES.map(m => `<th class="num">${m.mes_nome}</th>`).join('')}
+            <th class="num tcol tcol-1">Total 2026</th>
+            <th class="num tcol tcol-2">Total 2027</th>
+            <th class="num tcol tcol-3">Total 26-27</th>
+          </tr>
+        </thead>
+        <tbody>`;
+
+  const fechadosRec = STATE.ui?.grupos_fechados_receitas || [];
+  ['Felipe','Manuella'].forEach(pessoa => {
+    const suas = linhas.filter(l => l.pessoa === pessoa);
+    if (suas.length === 0) return;
+    const fechado = fechadosRec.includes(pessoa);
+    html += `<tr class="group-header" onclick="app.toggleGrupoReceita('${pessoa}')" style="cursor:pointer">
+      <td colspan="${nCols}"><span style="display:inline-block;width:16px">${fechado ? '▶' : '▼'}</span> ${pessoa}</td>
+    </tr>`;
+
+    const subMes = new Array(nMeses).fill(0);
+    suas.forEach(l => {
+      const vals = MESES.map(m => {
+        const r = STATE.budget_receitas.find(x => x.pessoa === l.pessoa && x.categoria === l.categoria && x.chave_mes === m.chave_mes);
+        return r ? r.valor_orcado : 0;
+      });
+      vals.forEach((v, i) => subMes[i] += v);
+      if (fechado) return;
+      const t26 = vals.reduce((s,v,i) => s + (MESES[i].ano === 2026 ? v : 0), 0);
+      const t27 = vals.reduce((s,v,i) => s + (MESES[i].ano === 2027 ? v : 0), 0);
+      const tot = t26 + t27;
+      html += `<tr>
+        <td class="sticky-col"><a class="cat-link" onclick="app.abrirModalReceita('${encodeURIComponent(l.pessoa)}','${encodeURIComponent(l.categoria)}')">${l.categoria}</a></td>
+        ${MESES.map((m, i) => `<td class="num"><input type="text" inputmode="decimal" class="cell-edit" value="${vals[i] > 0 ? formatNum(vals[i]) : ''}" onfocus="this.value = parseNum(this.value) || ''" onblur="this.value = formatNum(this.value)" onchange="app.editReceitaCel('${encodeURIComponent(l.pessoa)}','${encodeURIComponent(l.categoria)}','${m.chave_mes}',parseNum(this.value))" placeholder="—"></td>`).join('')}
+        <td class="num tcol tcol-1">${fmt(t26)}</td>
+        <td class="num tcol tcol-2">${fmt(t27)}</td>
+        <td class="num tcol tcol-3">${fmt(tot)}</td>
+      </tr>`;
+    });
+
+    const sub26 = subMes.reduce((s,v,i) => s + (MESES[i].ano === 2026 ? v : 0), 0);
+    const sub27 = subMes.reduce((s,v,i) => s + (MESES[i].ano === 2027 ? v : 0), 0);
+    const subTot = sub26 + sub27;
+    html += `<tr class="subtotal-row">
+      <td class="sticky-col">Subtotal ${pessoa}</td>
+      ${subMes.map(v => `<td class="num">${fmt(v)}</td>`).join('')}
+      <td class="num tcol tcol-1">${fmt(sub26)}</td>
+      <td class="num tcol tcol-2">${fmt(sub27)}</td>
+      <td class="num tcol tcol-3">${fmt(subTot)}</td>
+    </tr>`;
+  });
+
+  const totalMes = MESES.map(m => orcadoTotalReceitasMes(m.chave_mes));
+  const totalMes2026 = MESES.reduce((s,m,i) => s + (m.ano === 2026 ? totalMes[i] : 0), 0);
+  const totalMes2027 = MESES.reduce((s,m,i) => s + (m.ano === 2027 ? totalMes[i] : 0), 0);
+  const totalGeral = totalMes2026 + totalMes2027;
+  html += `<tr class="total-row">
+    <td class="sticky-col"><strong>TOTAL</strong></td>
+    ${totalMes.map(v => `<td class="num">${fmt(v)}</td>`).join('')}
+    <td class="num tcol tcol-1">${fmt(totalMes2026)}</td>
+    <td class="num tcol tcol-2">${fmt(totalMes2027)}</td>
+    <td class="num tcol tcol-3">${fmt(totalGeral)}</td>
+  </tr>`;
+
+  html += `</tbody></table></div>
+    <div style="margin-top:12px"><button class="btn" onclick="app.abrirModalReceitaNova()">+ Nova linha de receita</button></div>`;
+  return html;
+};
+
+// ----- HISTÓRICO DE LANÇAMENTOS -----
+VIEWS_FN.lancamentos_historico = function() {
+  const ma = STATE.config.mes_ativo;
+  const lancD = [...STATE.lancamentos].sort((a,b) => b.data.localeCompare(a.data));
+  const lancR = [...STATE.lancamentos_receitas].sort((a,b) => b.data.localeCompare(a.data));
+  return `
+    <h2>Lançamentos</h2>
+    <div class="section">
+      <h3>Despesas</h3>
+      ${lancD.length === 0 ? '<div class="muted">Nenhum lançamento ainda.</div>' : `
+      <table>
+        <thead><tr><th>Data</th><th>Autor</th><th>Categoria</th><th class="num">Valor</th><th>Descrição</th><th></th></tr></thead>
+        <tbody>
+          ${lancD.map(l => {
+            const cat = STATE.budget_despesas.find(d => d.id === l.categoria_id);
+            return `<tr>
+              <td>${l.data}</td>
+              <td>${l.autor}</td>
+              <td>${cat ? cat.categoria : '?'}</td>
+              <td class="num">${fmt(l.valor)}</td>
+              <td class="muted">${l.descricao || ''}</td>
+              <td><button class="btn btn-small danger" onclick="app.deleteLancamento('${l.id}')">🗑</button></td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>`}
+    </div>
+    <div class="section">
+      <h3>Receitas</h3>
+      ${lancR.length === 0 ? '<div class="muted">Nenhuma receita lançada ainda.</div>' : `
+      <table>
+        <thead><tr><th>Data</th><th>Pessoa</th><th>Categoria</th><th class="num">Valor</th><th>Descrição</th><th></th></tr></thead>
+        <tbody>
+          ${lancR.map(l => `<tr>
+            <td>${l.data}</td>
+            <td>${l.pessoa}</td>
+            <td>${l.categoria}</td>
+            <td class="num">${fmt(l.valor)}</td>
+            <td class="muted">${l.descricao || ''}</td>
+            <td><button class="btn btn-small danger" onclick="app.deleteLancamentoReceita('${l.id}')">🗑</button></td>
+          </tr>`).join('')}
+        </tbody>
+      </table>`}
+    </div>
+  `;
+};
+
+// ----- PATRIMÔNIO (wrapper com sub-tabs PL Felipe / Manu / Casal / Histórico) -----
+VIEWS_FN.patrimonio = function() {
+  const subtab = STATE.ui?.subtab_patrimonio || 'pl_felipe';
+  let inner;
+  if (subtab === 'pl_manu') inner = VIEWS_FN.pl_manu();
+  else if (subtab === 'pl_casal') inner = VIEWS_FN.pl_casal();
+  else if (subtab === 'pl_historico') inner = VIEWS_FN.pl_historico();
+  else inner = VIEWS_FN.pl_felipe();
+  return `
+    <div class="subtabs">
+      <button class="subtab ${subtab === 'pl_felipe' ? 'active' : ''}" onclick="app.setSubtabPatrimonio('pl_felipe')">👤 PL Felipe</button>
+      <button class="subtab ${subtab === 'pl_manu' ? 'active' : ''}" onclick="app.setSubtabPatrimonio('pl_manu')">👤 PL Manu</button>
+      <button class="subtab ${subtab === 'pl_casal' ? 'active' : ''}" onclick="app.setSubtabPatrimonio('pl_casal')">👫 PL Casal</button>
+      <button class="subtab ${subtab === 'pl_historico' ? 'active' : ''}" onclick="app.setSubtabPatrimonio('pl_historico')">📊 Histórico PL</button>
+    </div>
+    ${inner}
+  `;
+};
+
+// ----- HISTÓRICO PL -----
+VIEWS_FN.pl_historico = function() {
+  const hist = [...(STATE.historico_pl || [])].sort((a,b) => b.data.localeCompare(a.data));
+  return `
+    <h2>Histórico do PL</h2>
+    <p class="muted" style="margin-bottom:12px">Snapshot salvo automaticamente sempre que você edita o PL (1 entrada por dia, sobrescreve a do dia).</p>
+    <div class="section">
+      ${hist.length === 0 ? '<div class="muted">Ainda não há histórico. Edite o PL em PL Felipe ou PL Manu pra começar a registrar.</div>' : `
+      <table>
+        <thead>
+          <tr>
+            <th>Data</th>
+            <th class="num">PL Felipe</th>
+            <th class="num">PL Manu</th>
+            <th class="num">PL Casal</th>
+            <th class="num">Δ Casal</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${hist.map((s, i, arr) => {
+            const prox = arr[i+1]; // anterior cronológico (lista está desc)
+            const delta = prox ? s.pl_casal - prox.pl_casal : 0;
+            return `<tr>
+              <td>${s.data}</td>
+              <td class="num">${fmt(s.pl_felipe)}</td>
+              <td class="num">${fmt(s.pl_manu)}</td>
+              <td class="num ${s.pl_casal>=0?'num-good':'num-bad'}"><strong>${fmt(s.pl_casal)}</strong></td>
+              <td class="num ${delta>=0?'num-good':'num-bad'}">${prox ? fmtSign(delta) : '—'}</td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>`}
+      ${hist.length > 0 ? `<div style="margin-top:12px"><button class="btn ghost btn-small" onclick="app.limparHistoricoPL()">🗑 Limpar histórico</button></div>` : ''}
+    </div>
+  `;
+};
+
+// ----- PL FELIPE / MANU -----
+function viewPL(pessoa) {
+  const key = pessoa === 'Felipe' ? 'pl_felipe' : 'pl_manu';
+  const pl = STATE[key];
+  const total = plPessoa(pl);
+  const totAtivos = pl.ativos.reduce((s,a) => s + Number(a.valor), 0);
+  const totPassivos = pl.passivos.reduce((s,p) => s + Number(p.valor), 0);
+  return `
+    <h2>PL — ${pessoa}</h2>
+    <div class="cards">
+      <div class="card good"><div class="label">Ativos</div><div class="value">R$ ${fmt(totAtivos)}</div></div>
+      <div class="card bad"><div class="label">Passivos</div><div class="value">R$ ${fmt(totPassivos)}</div></div>
+      <div class="card ${total>=0?'good':'bad'}"><div class="label">PL Total</div><div class="value">R$ ${fmt(total)}</div></div>
+    </div>
+    <div class="section">
+      <h3>Ativos</h3>
+      <table>
+        <thead><tr><th>Item</th><th class="num">Valor</th><th></th></tr></thead>
+        <tbody>
+          ${pl.ativos.map((a,i) => `<tr>
+            <td><input type="text" data-pessoa="${pessoa}" data-grupo="ativos" data-idx="${i}" data-field="item" value="${a.item}" onchange="app.editPL(event)"></td>
+            <td><input type="text" inputmode="decimal" class="num" data-pessoa="${pessoa}" data-grupo="ativos" data-idx="${i}" data-field="valor" value="${formatNum(a.valor)}" onfocus="this.value = parseNum(this.value) || ''" onblur="this.value = formatNum(this.value)" onchange="app.editPL(event)"></td>
+            <td><button class="btn btn-small danger" onclick="app.deletePLLinha('${pessoa}','ativos',${i})">🗑</button></td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+      <button class="btn btn-small" style="margin-top:8px" onclick="app.addPLLinha('${pessoa}','ativos')">+ Adicionar ativo</button>
+    </div>
+    <div class="section">
+      <h3>Passivos (dívidas, faturas)</h3>
+      <table>
+        <thead><tr><th>Item</th><th class="num">Valor</th><th></th></tr></thead>
+        <tbody>
+          ${pl.passivos.map((p,i) => `<tr>
+            <td><input type="text" data-pessoa="${pessoa}" data-grupo="passivos" data-idx="${i}" data-field="item" value="${p.item}" onchange="app.editPL(event)"></td>
+            <td><input type="text" inputmode="decimal" class="num" data-pessoa="${pessoa}" data-grupo="passivos" data-idx="${i}" data-field="valor" value="${formatNum(p.valor)}" onfocus="this.value = parseNum(this.value) || ''" onblur="this.value = formatNum(this.value)" onchange="app.editPL(event)"></td>
+            <td><button class="btn btn-small danger" onclick="app.deletePLLinha('${pessoa}','passivos',${i})">🗑</button></td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+      <button class="btn btn-small" style="margin-top:8px" onclick="app.addPLLinha('${pessoa}','passivos')">+ Adicionar passivo</button>
+    </div>
+  `;
+}
+VIEWS_FN.pl_felipe = function() { return viewPL('Felipe'); };
+VIEWS_FN.pl_manu = function() { return viewPL('Manuella'); };
+
+// ----- PL CASAL -----
+VIEWS_FN.pl_casal = function() {
+  const plF = plFelipe();
+  const plM = plManu();
+  const tot = plF + plM;
+  const totAtF = STATE.pl_felipe.ativos.reduce((s,a) => s + Number(a.valor), 0);
+  const totAtM = STATE.pl_manu.ativos.reduce((s,a) => s + Number(a.valor), 0);
+  const totPaF = STATE.pl_felipe.passivos.reduce((s,p) => s + Number(p.valor), 0);
+  const totPaM = STATE.pl_manu.passivos.reduce((s,p) => s + Number(p.valor), 0);
+  return `
+    <h2>PL do Casal (consolidado)</h2>
+    <div class="cards">
+      <div class="card"><div class="label">PL Felipe</div><div class="value">R$ ${fmt(plF)}</div></div>
+      <div class="card"><div class="label">PL Manuella</div><div class="value">R$ ${fmt(plM)}</div></div>
+      <div class="card ${tot>=0?'good':'bad'}"><div class="label">PL Casal</div><div class="value">R$ ${fmt(tot)}</div></div>
+    </div>
+    <div class="section">
+      <h3>Composição</h3>
+      <table>
+        <thead><tr><th></th><th class="num">Felipe</th><th class="num">Manuella</th><th class="num">Casal</th></tr></thead>
+        <tbody>
+          <tr><td>Total Ativos</td><td class="num">${fmt(totAtF)}</td><td class="num">${fmt(totAtM)}</td><td class="num">${fmt(totAtF+totAtM)}</td></tr>
+          <tr><td>Total Passivos</td><td class="num">${fmt(totPaF)}</td><td class="num">${fmt(totPaM)}</td><td class="num">${fmt(totPaF+totPaM)}</td></tr>
+          <tr><td><strong>PL</strong></td><td class="num"><strong>${fmt(plF)}</strong></td><td class="num"><strong>${fmt(plM)}</strong></td><td class="num"><strong>${fmt(tot)}</strong></td></tr>
+        </tbody>
+      </table>
+    </div>
+  `;
+};
+
+// ----- PROJEÇÕES (fluxo de caixa mês a mês) -----
+// Helper: receitas e despesas pendentes de um mês
+function pendenteMes(chave_mes) {
+  const ma = STATE.config.mes_ativo;
+  let rec = 0, desp = 0;
+  STATE.budget_receitas.filter(r => r.chave_mes === chave_mes).forEach(r => {
+    const real = realizadoReceitaMes(r.pessoa, r.categoria, chave_mes);
+    rec += chave_mes === ma ? Math.max(0, r.valor_orcado - real) : Number(r.valor_orcado);
+  });
+  STATE.budget_despesas.forEach(d => {
+    const orc = orcadoMesCategoria(d, chave_mes);
+    const rea = realizadoMesCategoria(d.id, chave_mes);
+    desp += chave_mes === ma ? Math.max(0, orc - rea) : orc;
+  });
+  return {rec, desp};
+}
+
+VIEWS_FN.pl_projetado = function() {
+  const ma = STATE.config.mes_ativo;
+  const plAtual = plCasal();
+  const meses = SEMANAS_MES.filter(m => m.chave_mes >= ma);
+
+  // Calcula BoP / Receitas / Despesas / EoP encadeado mês a mês
+  let bop = plAtual;
+  const colunas = meses.map(m => {
+    const {rec, desp} = pendenteMes(m.chave_mes);
+    const eop = bop + rec - desp;
+    const row = {chave_mes: m.chave_mes, mes_nome: m.mes_nome, bop, rec, desp, eop};
+    bop = eop;
+    return row;
+  });
+
+  return `
+    <h2>Projeções</h2>
+    <div class="card" style="margin-bottom:16px">
+      <div class="label">PL Casal hoje (BoP inicial)</div>
+      <div class="value ${plAtual>=0?'num-good':'num-bad'}">R$ ${fmt(plAtual)}</div>
+    </div>
+
+    <div class="section" style="padding:0">
+      <h3 style="padding:16px 16px 0">Fluxo de caixa projetado — mês a mês</h3>
+      <div class="matrix-wrap" style="border:none;margin-top:12px">
+        <table class="matrix">
+          <thead>
+            <tr>
+              <th class="sticky-col">&nbsp;</th>
+              ${colunas.map(c => `<th class="num">${c.mes_nome}</th>`).join('')}
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="sticky-col"><strong>BoP</strong></td>
+              ${colunas.map(c => `<td class="num">${fmt(c.bop)}</td>`).join('')}
+            </tr>
+            <tr>
+              <td class="sticky-col num-good"><strong>(+) Receitas</strong></td>
+              ${colunas.map(c => `<td class="num num-good">${fmt(c.rec)}</td>`).join('')}
+            </tr>
+            <tr>
+              <td class="sticky-col num-bad"><strong>(−) Despesas</strong></td>
+              ${colunas.map(c => `<td class="num num-bad">${fmt(c.desp)}</td>`).join('')}
+            </tr>
+            <tr class="total-row">
+              <td class="sticky-col"><strong>EoP</strong></td>
+              ${colunas.map(c => `<td class="num ${c.eop>=0?'num-good':'num-bad'}"><strong>${fmt(c.eop)}</strong></td>`).join('')}
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+};
+
+// ----- HISTÓRICO -----
+VIEWS_FN.historico = function() {
+  const ma = STATE.config.mes_ativo;
+  return `
+    <h2>Histórico Mensal</h2>
+    <div class="section">
+      <button class="btn" onclick="app.fecharMes()">🔒 Fechar mês ${SEMANAS_MES.find(m=>m.chave_mes===ma).mes_nome}</button>
+    </div>
+    <div class="section">
+      ${STATE.historico.length === 0 ? '<div class="muted">Nenhum mês fechado ainda.</div>' : `
+      <table>
+        <thead><tr>
+          <th>Mês</th>
+          <th class="num">PL Ini</th>
+          <th class="num">PL Final Orçado</th>
+          <th class="num">PL Final Realizado</th>
+          <th class="num">PL Final Manual</th>
+        </tr></thead>
+        <tbody>
+          ${STATE.historico.map(h => {
+            const plOrc = h.pl_ini + h.res_orc;
+            const plReal = h.pl_ini + h.res_real;
+            const plManual = h.pl_fim;
+            return `<tr>
+              <td>${SEMANAS_MES.find(m=>m.chave_mes===h.chave_mes)?.mes_nome || h.chave_mes}</td>
+              <td class="num">${fmt(h.pl_ini)}</td>
+              <td class="num">${fmt(plOrc)}</td>
+              <td class="num">${fmt(plReal)}</td>
+              <td class="num ${plManual>=0?'num-good':'num-bad'}"><strong>${fmt(plManual)}</strong></td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>`}
+    </div>
+  `;
+};
+
+// ----- CONFIG -----
+VIEWS_FN.config = function() {
+  return `
+    <h2>Configurações</h2>
+    <div class="section">
+      <h3>Parâmetros</h3>
+      <div class="form-row">
+        <label>Mês ativo</label>
+        <select onchange="STATE.config.mes_ativo=this.value; saveState(); render();">
+          ${SEMANAS_MES.map(m => `<option value="${m.chave_mes}" ${m.chave_mes===STATE.config.mes_ativo?'selected':''}>${m.mes_nome}</option>`).join('')}
+        </select>
+      </div>
+    </div>
+    <div class="section">
+      <h3>Sincronização na nuvem</h3>
+      <div class="form-row">
+        <label>URL do backend</label>
+        <input type="text" value="${STATE.config.sync_url || ''}" placeholder="https://script.google.com/macros/s/.../exec" onchange="app.setSyncUrl(this.value)">
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
+        <button class="btn" onclick="app.syncDownloadNow()">⬇️ Baixar da nuvem</button>
+        <button class="btn ghost" onclick="app.syncUploadNow()">⬆️ Enviar pra nuvem</button>
+      </div>
+      <p class="muted" style="margin-top:8px;font-size:12px">Com a URL preenchida, cada edição sincroniza automaticamente. Se a nuvem estiver vazia (primeira vez), use "Enviar pra nuvem".</p>
+    </div>
+    <div class="section">
+      <h3>Dados locais</h3>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn danger" onclick="app.resetarTudo()">🔄 Resetar tudo (apagar lançamentos + PL)</button>
+      </div>
+    </div>
+    <div class="section">
+      <h3>Semanas por mês (referência fixa)</h3>
+      <table>
+        <thead><tr><th>Mês</th><th class="num">Dias úteis</th><th class="num">Semanas</th></tr></thead>
+        <tbody>
+          ${SEMANAS_MES.map(m => `<tr><td>${m.mes_nome}</td><td class="num">${m.dias_uteis}</td><td class="num">${m.semanas}</td></tr>`).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+};
+
+// ==========================================================
+// 6. AÇÕES (window.app)
+// ==========================================================
+
+const app = {
+  navigate(view) {
+    VIEW_ATUAL = view;
+    gavetaAtiva = null;
+    render();
+  },
+  selectGaveta(g) { gavetaAtiva = g; render(); },
+
+  toggleGrupo(g) {
+    STATE.ui = STATE.ui || {grupos_fechados: []};
+    STATE.ui.grupos_fechados = STATE.ui.grupos_fechados || [];
+    const i = STATE.ui.grupos_fechados.indexOf(g);
+    if (i >= 0) STATE.ui.grupos_fechados.splice(i, 1);
+    else STATE.ui.grupos_fechados.push(g);
+    saveState();
+    render();
+  },
+  setSubtabOrcamento(tab) {
+    STATE.ui = STATE.ui || {};
+    STATE.ui.subtab_orcamento = tab;
+    saveState();
+    render();
+  },
+  setSubtabLancamentos(tab) {
+    STATE.ui = STATE.ui || {};
+    STATE.ui.subtab_lancamentos = tab;
+    saveState();
+    render();
+  },
+  setSubtabPatrimonio(tab) {
+    STATE.ui = STATE.ui || {};
+    STATE.ui.subtab_patrimonio = tab;
+    saveState();
+    render();
+  },
+  limparHistoricoPL() {
+    if (!confirm('Apagar todo o histórico de PL?')) return;
+    STATE.historico_pl = [];
+    saveState();
+    render();
+  },
+  setSyncUrl(url) {
+    STATE.config.sync_url = (url || '').trim();
+    saveStateLocal();
+    setSyncStatus(STATE.config.sync_url ? 'idle' : 'off');
+  },
+  async syncDownloadNow() {
+    const ok = await syncDownload(false);
+    if (ok) render();
+  },
+  async syncUploadNow() {
+    if (!STATE.config?.sync_url) { alert('Configure a URL primeiro.'); return; }
+    await syncUpload();
+    alert('Enviado pra nuvem.');
+  },
+  toggleFiltroMes() {
+    STATE.ui = STATE.ui || {};
+    STATE.ui.filtrar_mes = !STATE.ui.filtrar_mes;
+    saveState();
+    render();
+  },
+  toggleGrupoDashboard(g) {
+    STATE.ui = STATE.ui || {};
+    STATE.ui.grupos_fechados_dashboard = STATE.ui.grupos_fechados_dashboard || [];
+    const i = STATE.ui.grupos_fechados_dashboard.indexOf(g);
+    if (i >= 0) STATE.ui.grupos_fechados_dashboard.splice(i, 1);
+    else STATE.ui.grupos_fechados_dashboard.push(g);
+    saveState();
+    render();
+  },
+  toggleGrupoReceita(g) {
+    STATE.ui = STATE.ui || {};
+    STATE.ui.grupos_fechados_receitas = STATE.ui.grupos_fechados_receitas || [];
+    const i = STATE.ui.grupos_fechados_receitas.indexOf(g);
+    if (i >= 0) STATE.ui.grupos_fechados_receitas.splice(i, 1);
+    else STATE.ui.grupos_fechados_receitas.push(g);
+    saveState();
+    render();
+  },
+
+  atualizarValorDespesa(form) {
+    const cat_id = form.querySelector('[name="categoria_id"]')?.value;
+    const mes = form.querySelector('[name="data"]')?.value;
+    const inputValor = form.querySelector('[name="valor"]');
+    if (!cat_id || !mes || !inputValor) return;
+    const d = STATE.budget_despesas.find(x => x.id === cat_id);
+    if (!d) return;
+    const valor = orcadoMesCategoria(d, mes);
+    if (valor > 0) inputValor.value = Math.round(valor);
+  },
+  atualizarValorReceita(form) {
+    const pessoa = form.querySelector('[name="pessoa"]')?.value;
+    const categoria = form.querySelector('[name="categoria"]')?.value;
+    const mes = form.querySelector('[name="data"]')?.value;
+    const inputValor = form.querySelector('[name="valor"]');
+    if (!pessoa || !categoria || !mes || !inputValor) return;
+    const r = STATE.budget_receitas.find(x => x.pessoa === pessoa && x.categoria === categoria && x.chave_mes === mes);
+    if (r && r.valor_orcado > 0) inputValor.value = Math.round(r.valor_orcado);
+  },
+
+  salvarLancamentoDespesa(e) {
+    const f = new FormData(e.target);
+    STATE.lancamentos.push({
+      id: 'l_' + Date.now(),
+      data: f.get('data'),
+      autor: f.get('autor'),
+      categoria_id: f.get('categoria_id'),
+      valor: parseFloat(f.get('valor')),
+      descricao: f.get('descricao') || '',
+    });
+    saveState();
+    e.target.reset();
+    statusMsg('Despesa lançada!');
+    render();
+  },
+  salvarLancamentoReceita(e) {
+    const f = new FormData(e.target);
+    STATE.lancamentos_receitas.push({
+      id: 'r_' + Date.now(),
+      data: f.get('data'),
+      pessoa: f.get('pessoa'),
+      categoria: f.get('categoria'),
+      valor: parseFloat(f.get('valor')),
+      descricao: f.get('descricao') || '',
+    });
+    saveState();
+    e.target.reset();
+    statusMsg('Receita lançada!');
+    render();
+  },
+
+  deleteLancamento(id) {
+    if (!confirm('Apagar este lançamento?')) return;
+    STATE.lancamentos = STATE.lancamentos.filter(l => l.id !== id);
+    saveState(); render();
+  },
+  deleteLancamentoReceita(id) {
+    if (!confirm('Apagar?')) return;
+    STATE.lancamentos_receitas = STATE.lancamentos_receitas.filter(l => l.id !== id);
+    saveState(); render();
+  },
+
+  addDespesa() {
+    STATE.budget_despesas.push({id:'nova_'+Date.now(), grupo:'Variável', categoria:'Nova categoria', tipo:'mensal', valor_base:0, descricao:''});
+    saveState(); render();
+  },
+
+  editPL(e) {
+    const pessoa = e.target.dataset.pessoa;
+    const grupo = e.target.dataset.grupo;
+    const i = +e.target.dataset.idx;
+    const field = e.target.dataset.field;
+    const v = e.target.value;
+    const key = pessoa === 'Felipe' ? 'pl_felipe' : 'pl_manu';
+    STATE[key][grupo][i][field] = field === 'valor' ? parseNum(v) : v;
+    if (field === 'valor') registrarSnapshotPL();
+    saveState();
+  },
+  addPLLinha(pessoa, grupo) {
+    const key = pessoa === 'Felipe' ? 'pl_felipe' : 'pl_manu';
+    if (grupo === 'ativos') STATE[key].ativos.push({item:'Novo', tipo:'caixa', valor:0});
+    else STATE[key].passivos.push({item:'Novo', valor:0});
+    registrarSnapshotPL();
+    saveState(); render();
+  },
+  deletePLLinha(pessoa, grupo, i) {
+    if (!confirm('Apagar?')) return;
+    const key = pessoa === 'Felipe' ? 'pl_felipe' : 'pl_manu';
+    STATE[key][grupo].splice(i,1);
+    registrarSnapshotPL();
+    saveState(); render();
+  },
+
+  fecharMes() {
+    const ma = STATE.config.mes_ativo;
+    // Bloqueia fechar fora de ordem: meses anteriores precisam estar fechados
+    const anterioresNaoFechados = SEMANAS_MES
+      .filter(m => m.chave_mes < ma)
+      .filter(m => !STATE.historico.find(h => h.chave_mes === m.chave_mes));
+    if (anterioresNaoFechados.length > 0) {
+      alert(`Não dá pra fechar ${ma}. Ainda faltam: ${anterioresNaoFechados.map(m => m.mes_nome).join(', ')}`);
+      return;
+    }
+    if (STATE.historico.find(h => h.chave_mes === ma)) {
+      if (!confirm('Mês ' + ma + ' já foi fechado. Refechar?')) return;
+      STATE.historico = STATE.historico.filter(h => h.chave_mes !== ma);
+    }
+    const recO = orcadoTotalReceitasMes(ma);
+    const recR = realizadoTotalReceitasMes(ma);
+    const despO = orcadoTotalDespesasMes(ma);
+    const despR = realizadoTotalDespesasMes(ma);
+    const plFim = plCasal();
+    // PL_ini = pl_fim do mês cronologicamente anterior (não o último do array)
+    const anterior = STATE.historico
+      .filter(h => h.chave_mes < ma)
+      .sort((a,b) => b.chave_mes.localeCompare(a.chave_mes))[0];
+    const plIni = anterior?.pl_fim ?? plFim;
+    const resOrc = recO - despO;
+    const resReal = recR - despR;
+    STATE.historico.push({
+      chave_mes: ma,
+      pl_ini: plIni,
+      rec_orc: recO, rec_real: recR,
+      desp_orc: despO, desp_real: despR,
+      res_orc: resOrc, res_real: resReal,
+      pl_fim: plFim,
+      variacao: resReal - resOrc,
+    });
+    // Avança o mês ativo pro próximo
+    const i = SEMANAS_MES.findIndex(m => m.chave_mes === ma);
+    if (i >= 0 && i < SEMANAS_MES.length - 1) {
+      STATE.config.mes_ativo = SEMANAS_MES[i+1].chave_mes;
+    }
+    saveState();
+    statusMsg('Mês ' + ma + ' fechado!');
+    render();
+  },
+
+  resetarTudo() {
+    if (!confirm('ATENÇÃO: apaga lançamentos, PL e volta o orçamento ao padrão. Continuar?')) return;
+    STATE = defaultState();
+    saveState();
+    render();
+  },
+
+  // ========= MODAL DESPESA =========
+  fecharModal() {
+    document.getElementById('modal-container').innerHTML = '';
+  },
+  abrirModalDespesa(id) {
+    const d = STATE.budget_despesas.find(x => x.id === id);
+    if (!d) return;
+    this.renderModalDespesa(d);
+  },
+  renderModalDespesa(d) {
+    const ocMap = new Map((d.ocorrencias || []).map(o => [o.chave_mes, o.valor]));
+    const html = `
+      <div class="modal-overlay" onclick="if(event.target===this) app.fecharModal()">
+        <div class="modal">
+          <div class="modal-header">
+            <h3>Editar categoria</h3>
+            <button onclick="app.fecharModal()">✕</button>
+          </div>
+          <div class="modal-body">
+            <div class="form-row"><label>Categoria</label><input type="text" value="${d.categoria.replace(/"/g,'&quot;')}" onchange="app.modalEditDespesa('${d.id}','categoria',this.value)"></div>
+            <div class="form-row"><label>Grupo</label><select onchange="app.modalEditDespesa('${d.id}','grupo',this.value)">
+              <option ${d.grupo==='Fixa Felipe'?'selected':''}>Fixa Felipe</option>
+              <option ${d.grupo==='Fixa Manu'?'selected':''}>Fixa Manu</option>
+              <option ${d.grupo==='Variável'?'selected':''}>Variável</option>
+            </select></div>
+            <div class="form-row"><label>Tipo</label>
+              <div class="tipo-chips">
+                ${['mensal','semanal','anual_acrual','data_fixa'].map(t => `
+                  <button type="button" class="chip-tipo ${d.tipo === t ? 'active' : ''}" onclick="app.modalEditDespesa('${d.id}','tipo','${t}')">
+                    ${tipoLabel(t)}
+                    <div class="chip-tooltip">${tipoExplicacao(t)}</div>
+                  </button>
+                `).join('')}
+              </div>
+            </div>
+            <div class="form-row"><label>Valor Base (R$)</label><input type="text" inputmode="decimal" value="${formatNum(d.valor_base ?? 0)}" onfocus="this.value = parseNum(this.value) || ''" onblur="this.value = formatNum(this.value)" onchange="app.modalEditDespesa('${d.id}','valor_base',parseNum(this.value))"></div>
+            ${d.tipo === 'anual_acrual' ? (function() {
+              const vb = Number(d.valor_base) || 0;
+              const anual2027 = d.orcamento_anual?.[2027] || 0;
+              const freq = vb > 0 ? Math.round(anual2027 / vb) : '';
+              const meses2026 = mesesAno(2026).length;
+              const meses2027 = mesesAno(2027).length;
+              const t2027 = vb * (Number(freq) || 0);
+              const t2026 = t2027 * (meses2026 / 12);
+              return `
+                <div class="form-row"><label>Vezes Por Ano</label><input type="number" step="1" min="1" value="${freq}" onchange="app.modalEditDespesa('${d.id}','freq_anual',this.value)"></div>
+                <div style="font-size:12px;color:var(--muted);margin:-4px 0 12px 176px;line-height:1.6">
+                  Ex: 2 em 2 meses = 6; 3 em 3 meses = 4
+                </div>
+              `;
+            })() : ''}
+
+            ${d.tipo === 'data_fixa' ? `
+              <h4>Ocorrências (valor por mês)</h4>
+              <table>
+                <thead><tr><th>Mês</th><th class="num">Valor</th></tr></thead>
+                <tbody>
+                  ${SEMANAS_MES.map(m => `<tr>
+                    <td>${m.mes_nome}</td>
+                    <td><input type="text" inputmode="decimal" class="num" value="${ocMap.has(m.chave_mes) ? formatNum(ocMap.get(m.chave_mes)) : ''}" onfocus="this.value = parseNum(this.value) || ''" onblur="this.value = formatNum(this.value)" onchange="app.modalEditOcorrencia('${d.id}','${m.chave_mes}',parseNum(this.value))" placeholder="—" style="width:100%"></td>
+                  </tr>`).join('')}
+                </tbody>
+              </table>
+            ` : ''}
+
+          </div>
+          <div class="modal-footer">
+            <button class="btn danger" onclick="app.deleteDespesaByID('${d.id}')">🗑 Apagar categoria</button>
+            <button class="btn" onclick="app.fecharModal(); render();">Fechar e atualizar</button>
+          </div>
+        </div>
+      </div>`;
+    document.getElementById('modal-container').innerHTML = html;
+  },
+  modalEditDespesa(id, field, value) {
+    const d = STATE.budget_despesas.find(x => x.id === id);
+    if (!d) return;
+    if (field === 'orc_2026' || field === 'orc_2027') {
+      d.orcamento_anual = d.orcamento_anual || {};
+      const ano = field === 'orc_2026' ? 2026 : 2027;
+      if (value === '' || value === null) delete d.orcamento_anual[ano];
+      else d.orcamento_anual[ano] = parseFloat(value);
+    } else if (field === 'valor_base') {
+      const valorAntigo = Number(d.valor_base) || 0;
+      const novoValor = parseFloat(value) || 0;
+      d.valor_base = novoValor;
+      // Se anual_acrual, preserva a frequência e recalcula orcamento_anual
+      if (d.tipo === 'anual_acrual' && valorAntigo > 0 && d.orcamento_anual) {
+        const meses2026 = mesesAno(2026).length;
+        const meses2027 = mesesAno(2027).length;
+        const freq = (d.orcamento_anual[2027] || 0) / valorAntigo;
+        d.orcamento_anual[2027] = novoValor * freq;
+        d.orcamento_anual[2026] = novoValor * freq * (meses2026 / 12);
+      }
+      saveState();
+      this.renderModalDespesa(d);
+      return;
+    } else if (field === 'freq_anual') {
+      const freq = parseFloat(value) || 0;
+      const vb = Number(d.valor_base) || 0;
+      d.orcamento_anual = d.orcamento_anual || {};
+      const meses2026 = mesesAno(2026).length;
+      const meses2027 = mesesAno(2027).length;
+      d.orcamento_anual[2027] = vb * freq * (meses2027 / 12);
+      d.orcamento_anual[2026] = vb * freq * (meses2026 / 12);
+      saveState();
+      this.renderModalDespesa(d);
+      return;
+    } else if (field === 'tipo') {
+      d.tipo = value;
+      // Se mudou pra data_fixa e não tem ocorrencias, cria array
+      if (value === 'data_fixa' && !d.ocorrencias) d.ocorrencias = [];
+      // Rerenderiza o modal pra mostrar campos relevantes
+      saveState();
+      this.renderModalDespesa(d);
+      return;
+    } else {
+      d[field] = value;
+    }
+    saveState();
+  },
+  modalEditOcorrencia(id, chave_mes, value) {
+    const d = STATE.budget_despesas.find(x => x.id === id);
+    if (!d) return;
+    d.ocorrencias = d.ocorrencias || [];
+    const v = value === '' ? null : parseFloat(value);
+    const existing = d.ocorrencias.find(o => o.chave_mes === chave_mes);
+    if (v === null || isNaN(v) || v === 0) {
+      // Remove ocorrência
+      d.ocorrencias = d.ocorrencias.filter(o => o.chave_mes !== chave_mes);
+    } else if (existing) {
+      existing.valor = v;
+    } else {
+      d.ocorrencias.push({chave_mes, valor: v});
+    }
+    saveState();
+  },
+  deleteDespesaByID(id) {
+    if (!confirm('Apagar esta categoria? Todos os lançamentos vinculados ficarão órfãos.')) return;
+    STATE.budget_despesas = STATE.budget_despesas.filter(d => d.id !== id);
+    saveState();
+    this.fecharModal();
+    render();
+  },
+
+  // ========= MODAL RECEITA =========
+  editReceitaCel(pessoaEnc, categoriaEnc, chave_mes, valor) {
+    const pessoa = decodeURIComponent(pessoaEnc);
+    const categoria = decodeURIComponent(categoriaEnc);
+    const v = parseFloat(valor) || 0;
+    const r = STATE.budget_receitas.find(x => x.pessoa === pessoa && x.categoria === categoria && x.chave_mes === chave_mes);
+    if (r) {
+      r.valor_orcado = v;
+    } else if (v > 0) {
+      STATE.budget_receitas.push({id:'rec_'+Date.now()+'_'+Math.random().toString(36).slice(2,7), pessoa, categoria, chave_mes, valor_orcado: v});
+    }
+    saveState();
+    // Atualiza total da linha sem re-renderizar tudo (melhor UX)
+    render();
+  },
+  abrirModalReceita(pessoaEnc, categoriaEnc) {
+    const pessoa = decodeURIComponent(pessoaEnc);
+    const categoria = decodeURIComponent(categoriaEnc);
+    const linhas = STATE.budget_receitas.filter(r => r.pessoa === pessoa && r.categoria === categoria);
+    const html = `
+      <div class="modal-overlay" onclick="if(event.target===this) app.fecharModal()">
+        <div class="modal">
+          <div class="modal-header">
+            <h3>${pessoa} · ${categoria}</h3>
+            <button onclick="app.fecharModal()">✕</button>
+          </div>
+          <div class="modal-body">
+            <div class="form-row"><label>Renomear categoria</label><input type="text" value="${categoria.replace(/"/g,'&quot;')}" onchange="app.renomearReceita('${pessoaEnc}','${categoriaEnc}',this.value)"></div>
+            <div class="form-row"><label>Mudar pessoa</label><select onchange="app.mudarPessoaReceita('${pessoaEnc}','${categoriaEnc}',this.value)">
+              <option ${pessoa==='Felipe'?'selected':''}>Felipe</option>
+              <option ${pessoa==='Manuella'?'selected':''}>Manuella</option>
+            </select></div>
+            <div class="form-row"><label>Aplicar valor em todos os meses</label>
+              <div style="display:flex;gap:8px">
+                <input type="number" id="bulkReceita" step="0.01" placeholder="R$">
+                <button class="btn btn-small" onclick="app.aplicarReceitaBulk('${pessoaEnc}','${categoriaEnc}')">Aplicar</button>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button class="btn danger" onclick="app.deleteReceitaLinha('${pessoaEnc}','${categoriaEnc}')">🗑 Apagar ${linhas.length} linha(s)</button>
+            <button class="btn" onclick="app.fecharModal(); render();">Fechar</button>
+          </div>
+        </div>
+      </div>`;
+    document.getElementById('modal-container').innerHTML = html;
+  },
+  abrirModalReceitaNova() {
+    const html = `
+      <div class="modal-overlay" onclick="if(event.target===this) app.fecharModal()">
+        <div class="modal">
+          <div class="modal-header">
+            <h3>Nova linha de receita</h3>
+            <button onclick="app.fecharModal()">✕</button>
+          </div>
+          <div class="modal-body">
+            <div class="form-row"><label>Pessoa</label><select id="newRecPessoa">
+              <option>Felipe</option><option>Manuella</option>
+            </select></div>
+            <div class="form-row"><label>Categoria</label><input type="text" id="newRecCategoria" placeholder="Ex: Freela"></div>
+            <div class="form-row"><label>Valor em TODOS os meses</label><input type="number" step="0.01" id="newRecValor" placeholder="Ou deixa em branco e edita por mês depois"></div>
+          </div>
+          <div class="modal-footer">
+            <button class="btn ghost" onclick="app.fecharModal()">Cancelar</button>
+            <button class="btn" onclick="app.criarReceitaNova()">Criar</button>
+          </div>
+        </div>
+      </div>`;
+    document.getElementById('modal-container').innerHTML = html;
+  },
+  criarReceitaNova() {
+    const pessoa = document.getElementById('newRecPessoa').value;
+    const categoria = document.getElementById('newRecCategoria').value.trim();
+    const valor = parseFloat(document.getElementById('newRecValor').value) || 0;
+    if (!categoria) { alert('Digite uma categoria.'); return; }
+    // Sempre cria linhas em todos os 20 meses (mesmo com valor 0) pra matriz aparecer completa e editável
+    SEMANAS_MES.forEach(m => {
+      STATE.budget_receitas.push({
+        id:'rec_'+Date.now()+'_'+Math.random().toString(36).slice(2,7),
+        pessoa, categoria,
+        chave_mes: m.chave_mes,
+        valor_orcado: valor
+      });
+    });
+    saveState();
+    this.fecharModal();
+    render();
+  },
+  aplicarReceitaBulk(pessoaEnc, categoriaEnc) {
+    const pessoa = decodeURIComponent(pessoaEnc);
+    const categoria = decodeURIComponent(categoriaEnc);
+    const v = parseFloat(document.getElementById('bulkReceita').value);
+    if (isNaN(v)) { alert('Digite um valor.'); return; }
+    SEMANAS_MES.forEach(m => {
+      const r = STATE.budget_receitas.find(x => x.pessoa === pessoa && x.categoria === categoria && x.chave_mes === m.chave_mes);
+      if (r) r.valor_orcado = v;
+      else STATE.budget_receitas.push({id:'rec_'+Date.now()+'_'+Math.random().toString(36).slice(2,7), pessoa, categoria, chave_mes: m.chave_mes, valor_orcado: v});
+    });
+    saveState();
+    this.fecharModal();
+    render();
+  },
+  renomearReceita(pessoaEnc, categoriaEnc, novaCat) {
+    const pessoa = decodeURIComponent(pessoaEnc);
+    const categoria = decodeURIComponent(categoriaEnc);
+    STATE.budget_receitas.forEach(r => {
+      if (r.pessoa === pessoa && r.categoria === categoria) r.categoria = novaCat;
+    });
+    saveState();
+  },
+  mudarPessoaReceita(pessoaEnc, categoriaEnc, novaPessoa) {
+    const pessoa = decodeURIComponent(pessoaEnc);
+    const categoria = decodeURIComponent(categoriaEnc);
+    STATE.budget_receitas.forEach(r => {
+      if (r.pessoa === pessoa && r.categoria === categoria) r.pessoa = novaPessoa;
+    });
+    saveState();
+  },
+  deleteReceitaLinha(pessoaEnc, categoriaEnc) {
+    const pessoa = decodeURIComponent(pessoaEnc);
+    const categoria = decodeURIComponent(categoriaEnc);
+    if (!confirm(`Apagar TODAS as ocorrências de "${categoria}" do ${pessoa}?`)) return;
+    STATE.budget_receitas = STATE.budget_receitas.filter(r => !(r.pessoa === pessoa && r.categoria === categoria));
+    saveState();
+    this.fecharModal();
+    render();
+  },
+};
+window.app = app;
+
+// ==========================================================
+// 7. INIT
+// ==========================================================
+
+// Tooltip global pros chips — posiciona via JS pra escapar do overflow do modal
+document.addEventListener('mouseover', (e) => {
+  const chip = e.target.closest('.chip-tipo');
+  if (!chip) return;
+  const tooltip = chip.querySelector('.chip-tooltip');
+  if (!tooltip) return;
+  tooltip.style.display = 'block';
+  tooltip.style.visibility = 'hidden';
+  requestAnimationFrame(() => {
+    const rect = chip.getBoundingClientRect();
+    const ttH = tooltip.offsetHeight;
+    const ttW = tooltip.offsetWidth;
+    let top = rect.top - ttH - 10;
+    if (top < 10) top = rect.bottom + 10;
+    let left = rect.left + rect.width/2 - ttW/2;
+    if (left < 10) left = 10;
+    if (left + ttW > window.innerWidth - 10) left = window.innerWidth - ttW - 10;
+    tooltip.style.top = top + 'px';
+    tooltip.style.left = left + 'px';
+    tooltip.style.visibility = 'visible';
+  });
+});
+document.addEventListener('mouseout', (e) => {
+  const chip = e.target.closest('.chip-tipo');
+  if (!chip) return;
+  const tooltip = chip.querySelector('.chip-tooltip');
+  if (tooltip) tooltip.style.display = 'none';
+});
+
+// Init: renderiza e tenta baixar da nuvem se configurado
+render();
+if (STATE.config?.sync_url) {
+  syncDownload(true).then(baixou => { if (baixou) render(); });
+} else {
+  setSyncStatus('off');
+}
+</script>
+</body>
+</html>
