@@ -933,14 +933,20 @@ function fmtMoney(n) {
   return Number(n).toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2});
 }
 // Formata pra input editável com separador de milhar (#.##0)
+// Aceita número OU string em formato BR ("1.500,50") OU formato simples ("1500.50")
 function formatNum(n) {
-  if (n === null || n === undefined || n === '' || isNaN(Number(n))) return '';
-  return Math.round(Number(n)).toLocaleString('pt-BR');
+  if (n === null || n === undefined || n === '') return '';
+  const num = typeof n === 'string' ? parseNum(n) : Number(n);
+  if (isNaN(num)) return '';
+  return Math.round(num).toLocaleString('pt-BR');
 }
 // Formata pra input editável com 2 casas (#.##0,00)
+// Aceita número OU string em formato BR ("1.500,50")
 function formatNum2(n) {
-  if (n === null || n === undefined || n === '' || isNaN(Number(n))) return '';
-  return Number(n).toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+  if (n === null || n === undefined || n === '') return '';
+  const num = typeof n === 'string' ? parseNum(n) : Number(n);
+  if (isNaN(num)) return '';
+  return num.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2});
 }
 // Converte "4.500" ou "4500" ou "4.500,30" de volta pra número
 function parseNum(s) {
