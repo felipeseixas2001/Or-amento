@@ -941,11 +941,11 @@ function formatNum(n) {
   return Math.round(num).toLocaleString('pt-BR');
 }
 // Formata pra input editável com 2 casas (#.##0,00)
-// Aceita número OU string em formato BR ("1.500,50")
+// Aceita número OU string em formato BR ("1.500,50"). Nunca devolve vazio — fallback "0,00".
 function formatNum2(n) {
-  if (n === null || n === undefined || n === '') return '';
+  if (n === null || n === undefined || n === '') return '0,00';
   const num = typeof n === 'string' ? parseNum(n) : Number(n);
-  if (isNaN(num)) return '';
+  if (isNaN(num)) return '0,00';
   return num.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2});
 }
 // Converte "4.500" ou "4500" ou "4.500,30" de volta pra número
@@ -1955,7 +1955,19 @@ VIEWS_FN.lancamentos_historico = function() {
                   <span class="muted" id="edit-parcelas-preview" style="font-size:13px;"></span>
                 </div>
               </div>
-              ` : ''}
+              ` : `
+              <div class="form-row">
+                <label>Reparcelar grupo</label>
+                <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+                  <input type="number" id="reparcelas-n" min="1" max="24" value="${l.parcela_total}" style="width:80px;background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:8px 10px;border-radius:6px;font-size:14px;">
+                  <span class="muted" style="font-size:12px;">parcela(s) — atual: ${l.parcela_total}x</span>
+                  <button type="button" class="btn btn-small" onclick="app.reparcelarGrupo('${l.parcela_grupo}')">Reparcelar tudo</button>
+                </div>
+              </div>
+              <div class="muted" style="font-size:11px; margin:-6px 0 12px 172px; line-height:1.5;">
+                Recria todas as parcelas do grupo mantendo o valor total, mês inicial e descrição. Categoria e autor usam o que estiver editado acima.
+              </div>
+              `}
             </form>
           </div>
           <div class="modal-footer">
@@ -2610,6 +2622,72 @@ const app = {
     const aviso = fora > 0 ? ` ⚠️ ${fora} parcela(s) fora do horizonte` : '';
     preview.textContent = `→ ${n}x de R$ ${parcelaValor.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})} (${meses.join(', ')})${aviso}`;
   },
+  reparcelarGrupo(grupoId) {
+    const inputN = document.getElementById('reparcelas-n');
+    const novoN = Math.max(1, Math.min(24, parseInt(inputN?.value) || 1));
+    const parcelas = STATE.lancamentos.filter(l => l.parcela_grupo === grupoId);
+    if (parcelas.length === 0) { alert('Grupo não encontrado.'); return; }
+
+    // Pega a parcela atualmente em edição (pode ter alterações pendentes feitas no modal)
+    const currentId = STATE.ui?.editing_lanc_id;
+    const current = STATE.lancamentos.find(l => l.id === currentId) || parcelas[0];
+
+    if (!confirm(`Reparcelar de ${parcelas.length}x para ${novoN}x? As ${parcelas.length} parcelas atuais serão substituídas.`)) return;
+
+    // Soma total da compra (todas as parcelas)
+    const total = parcelas.reduce((s, p) => s + Number(p.valor), 0);
+    // Mês inicial do grupo (parcela 1/N)
+    const firstMonth = parcelas.map(p => p.data).sort()[0];
+    // Descrição base: tira o sufixo [X/Y] do final
+    const rawDesc = current.descricao || parcelas[0].descricao || '';
+    const descBase = rawDesc.replace(/\s*\[\d+\/\d+\]\s*$/, '').trim();
+    // Autor e categoria: usa a versão (possivelmente editada) da parcela em edição
+    const autor = current.autor;
+    const categoria_id = current.categoria_id;
+
+    // Remove todas as parcelas do grupo antigo
+    STATE.lancamentos = STATE.lancamentos.filter(l => l.parcela_grupo !== grupoId);
+
+    const idxBase = SEMANAS_MES.findIndex(m => m.chave_mes === firstMonth);
+    if (idxBase < 0) { alert('Mês inicial inválido.'); return; }
+    const cabem = Math.min(novoN, SEMANAS_MES.length - idxBase);
+    if (cabem < novoN && !confirm(`Só cabem ${cabem} de ${novoN} parcelas no horizonte (até dez-27). Continuar com ${cabem}?`)) return;
+
+    if (cabem === 1) {
+      // Vira lançamento único (sem parcela_grupo)
+      STATE.lancamentos.push({
+        id: 'l_' + Date.now(),
+        data: firstMonth,
+        autor, categoria_id,
+        valor: total,
+        descricao: descBase,
+      });
+      statusMsg(`Convertido em lançamento único (R$ ${total.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})})`);
+    } else {
+      const novoGrupoId = 'pg_' + Date.now();
+      const totalCent = Math.round(total * 100);
+      const baseCent = Math.floor(totalCent / cabem);
+      const restoCent = totalCent - baseCent * cabem;
+      for (let i = 0; i < cabem; i++) {
+        const mes = SEMANAS_MES[idxBase + i].chave_mes;
+        const vCent = (i === cabem - 1) ? baseCent + restoCent : baseCent;
+        STATE.lancamentos.push({
+          id: 'l_' + Date.now() + '_' + i,
+          data: mes,
+          autor, categoria_id,
+          valor: vCent / 100,
+          descricao: (descBase ? descBase + ' ' : '') + `[${i+1}/${cabem}]`,
+          parcela_grupo: novoGrupoId,
+          parcela_n: i + 1,
+          parcela_total: cabem,
+        });
+      }
+      statusMsg(`Reparcelado em ${cabem}x`);
+    }
+    STATE.ui.editing_lanc_id = null;
+    saveState();
+    render();
+  },
   salvarEdicaoLanc(e) {
     e.preventDefault();
     const f = new FormData(e.target);
@@ -3242,4 +3320,5 @@ if (STATE.config?.sync_url) {
 </script>
 </body>
 </html>
+
 
