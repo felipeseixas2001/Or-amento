@@ -750,6 +750,91 @@ function defaultState() {
 
 let STATE = loadState();
 
+// Aplica todas as migrations e a reordenação no objeto state passado.
+// Chamado tanto no loadState (vindo do localStorage) quanto no syncDownload (vindo da nuvem).
+function runMigrations(state) {
+  if (!state || typeof state !== 'object') return state;
+  // 13º/14º → 13º e 14º
+  if (state.budget_receitas) state.budget_receitas.forEach(r => {
+    if (r.categoria === '13º' || r.categoria === '14º') r.categoria = '13º e 14º';
+  });
+  if (state.lancamentos_receitas) state.lancamentos_receitas.forEach(r => {
+    if (r.categoria === '13º' || r.categoria === '14º') r.categoria = '13º e 14º';
+  });
+  // Garante Auxílio Natal da Manuella
+  state.budget_receitas = state.budget_receitas || [];
+  [['2026-12', 500], ['2027-12', 500]].forEach(([mes, val]) => {
+    const jaTem = state.budget_receitas.find(r => r.pessoa === 'Manuella' && r.categoria === 'Auxílio Natal' && r.chave_mes === mes);
+    if (!jaTem) state.budget_receitas.push({id:'rec_aux_manu_'+mes, pessoa:'Manuella', categoria:'Auxílio Natal', chave_mes:mes, valor_orcado:val});
+  });
+  // Remove Bônus
+  state.budget_receitas = state.budget_receitas.filter(r => r.categoria !== 'Bônus');
+  if (state.lancamentos_receitas) state.lancamentos_receitas = state.lancamentos_receitas.filter(r => r.categoria !== 'Bônus');
+  // Remove categoria "Outros"
+  if (state.budget_despesas) state.budget_despesas = state.budget_despesas.filter(d => d.id !== 'outros');
+  // Mercado + Farmácia → Variável (sempre, mesmo que rode 2x)
+  if (state.budget_despesas) {
+    const mercado = state.budget_despesas.find(d => d.id === 'mercado');
+    if (mercado && mercado.grupo !== 'Variável') mercado.grupo = 'Variável';
+  }
+  // Mercado (500/sem) e Whey (mensal 300) — one-time
+  if (!state.config?.migrated_mercado_whey_v2 && state.budget_despesas) {
+    const mercado = state.budget_despesas.find(d => d.id === 'mercado');
+    if (mercado) {
+      mercado.valor_base = 500;
+      mercado.tipo = 'semanal';
+      if (!mercado.descricao || /\d+\/semana/.test(mercado.descricao)) mercado.descricao = '500/semana';
+    }
+    const whey = state.budget_despesas.find(d => d.id === 'whey');
+    if (whey) {
+      whey.tipo = 'mensal';
+      whey.valor_base = 300;
+      delete whey.orcamento_anual;
+      delete whey.ocorrencias;
+      if (!whey.descricao || /300 cada/.test(whey.descricao)) whey.descricao = '300/mês';
+    }
+    state.config = state.config || {};
+    state.config.migrated_mercado_whey_v2 = true;
+  }
+  // Presentes F→M, M→F e restaurantes em R$ 500 — one-time
+  if (!state.config?.migrated_presentes_500 && state.budget_despesas) {
+    const ids500 = ['aniv_namoro_rest','aniv_namoro_fm','aniv_namoro_mf','dia_namorados_rest','dia_namorados_fm','dia_namorados_mf','natal_fm','natal_mf'];
+    state.budget_despesas.forEach(d => {
+      if (ids500.includes(d.id)) {
+        d.valor_base = 500;
+        if (Array.isArray(d.ocorrencias)) d.ocorrencias.forEach(o => { o.valor = 500; });
+      }
+    });
+    state.config = state.config || {};
+    state.config.migrated_presentes_500 = true;
+  }
+  // Prazo curto/longo nos ativos/passivos
+  ['pl_felipe', 'pl_manu'].forEach(key => {
+    const pl = state[key];
+    if (!pl) return;
+    (pl.ativos || []).forEach(a => {
+      if (!a.prazo) a.prazo = /n[ãa]o\s*cir/i.test(a.item || '') ? 'longo' : 'curto';
+    });
+    (pl.passivos || []).forEach(p => {
+      if (!p.prazo) p.prazo = /n[ãa]o\s*cir/i.test(p.item || '') ? 'longo' : 'curto';
+    });
+  });
+  // Reordena budget_despesas na ordem do SEED + customs no final
+  if (state.budget_despesas) {
+    const seedIds = new Set(BUDGET_DESPESAS_SEED.map(s => s.id));
+    const stateById = new Map(state.budget_despesas.map(d => [d.id, d]));
+    const customUsuario = state.budget_despesas.filter(d => !seedIds.has(d.id));
+    const novoBudget = [];
+    BUDGET_DESPESAS_SEED.forEach(seedD => {
+      if (stateById.has(seedD.id)) novoBudget.push(stateById.get(seedD.id));
+      else novoBudget.push(JSON.parse(JSON.stringify(seedD)));
+    });
+    customUsuario.forEach(c => novoBudget.push(c));
+    state.budget_despesas = novoBudget;
+  }
+  return state;
+}
+
 function loadState() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -758,84 +843,7 @@ function loadState() {
       // merge simples se faltar algum campo novo
       const def = defaultState();
       const merged = {...def, ...s, config: {...def.config, ...s.config}, ui: {...def.ui, ...(s.ui||{})}};
-      // Migrações
-      if (merged.budget_receitas) merged.budget_receitas.forEach(r => {
-        if (r.categoria === '13º' || r.categoria === '14º') r.categoria = '13º e 14º';
-      });
-      if (merged.lancamentos_receitas) merged.lancamentos_receitas.forEach(r => {
-        if (r.categoria === '13º' || r.categoria === '14º') r.categoria = '13º e 14º';
-      });
-      // Garante Auxílio Natal da Manuella
-      [['2026-12', 500], ['2027-12', 500]].forEach(([mes, val]) => {
-        const jaTem = merged.budget_receitas.find(r => r.pessoa === 'Manuella' && r.categoria === 'Auxílio Natal' && r.chave_mes === mes);
-        if (!jaTem) merged.budget_receitas.push({id:'rec_aux_manu_'+mes, pessoa:'Manuella', categoria:'Auxílio Natal', chave_mes:mes, valor_orcado:val});
-      });
-      // Remove Bônus de orçamento e de lançamentos realizados
-      if (merged.budget_receitas) merged.budget_receitas = merged.budget_receitas.filter(r => r.categoria !== 'Bônus');
-      if (merged.lancamentos_receitas) merged.lancamentos_receitas = merged.lancamentos_receitas.filter(r => r.categoria !== 'Bônus');
-      // Remove categoria "Outros" (extras/lazer agora absorve estouros)
-      if (merged.budget_despesas) {
-        merged.budget_despesas = merged.budget_despesas.filter(d => d.id !== 'outros');
-      }
-      // Migra Mercado + Farmácia de "Fixa Felipe" para "Variável"
-      if (merged.budget_despesas) {
-        const mercado = merged.budget_despesas.find(d => d.id === 'mercado');
-        if (mercado && mercado.grupo !== 'Variável') mercado.grupo = 'Variável';
-      }
-      // Atualiza defaults de Mercado (500/sem) e Whey (mensal 300) — one-time
-      if (!merged.config?.migrated_mercado_whey_v2 && merged.budget_despesas) {
-        const mercado = merged.budget_despesas.find(d => d.id === 'mercado');
-        if (mercado) {
-          mercado.valor_base = 500;
-          mercado.tipo = 'semanal';
-          if (!mercado.descricao || /\d+\/semana/.test(mercado.descricao)) mercado.descricao = '500/semana';
-        }
-        const whey = merged.budget_despesas.find(d => d.id === 'whey');
-        if (whey) {
-          whey.tipo = 'mensal';
-          whey.valor_base = 300;
-          delete whey.orcamento_anual;
-          delete whey.ocorrencias;
-          if (!whey.descricao || /300 cada/.test(whey.descricao)) whey.descricao = '300/mês';
-        }
-        merged.config = merged.config || {};
-        merged.config.migrated_mercado_whey_v2 = true;
-      }
-      // Padroniza presentes (F→M, M→F) e restaurantes de aniv/dia dos namorados em R$ 500 — one-time
-      if (!merged.config?.migrated_presentes_500 && merged.budget_despesas) {
-        const ids500 = ['aniv_namoro_rest','aniv_namoro_fm','aniv_namoro_mf','dia_namorados_rest','dia_namorados_fm','dia_namorados_mf','natal_fm','natal_mf'];
-        merged.budget_despesas.forEach(d => {
-          if (ids500.includes(d.id)) {
-            d.valor_base = 500;
-            if (Array.isArray(d.ocorrencias)) d.ocorrencias.forEach(o => { o.valor = 500; });
-          }
-        });
-        merged.config = merged.config || {};
-        merged.config.migrated_presentes_500 = true;
-      }
-      // Define prazo (curto/longo) nos ativos/passivos. Itens com "Não Circulante" no nome viram longo prazo
-      ['pl_felipe', 'pl_manu'].forEach(key => {
-        const pl = merged[key];
-        if (!pl) return;
-        (pl.ativos || []).forEach(a => {
-          if (!a.prazo) a.prazo = /n[ãa]o\s*cir/i.test(a.item || '') ? 'longo' : 'curto';
-        });
-        (pl.passivos || []).forEach(p => {
-          if (!p.prazo) p.prazo = /n[ãa]o\s*cir/i.test(p.item || '') ? 'longo' : 'curto';
-        });
-      });
-      // Reordena budget_despesas na ordem do SEED (preservando edições do usuário) + custom do usuário no final
-      const seedIds = new Set(BUDGET_DESPESAS_SEED.map(s => s.id));
-      const stateById = new Map((merged.budget_despesas || []).map(d => [d.id, d]));
-      const customUsuario = (merged.budget_despesas || []).filter(d => !seedIds.has(d.id));
-      const novoBudget = [];
-      BUDGET_DESPESAS_SEED.forEach(seedD => {
-        if (stateById.has(seedD.id)) novoBudget.push(stateById.get(seedD.id));
-        else novoBudget.push(JSON.parse(JSON.stringify(seedD)));
-      });
-      customUsuario.forEach(c => novoBudget.push(c));
-      merged.budget_despesas = novoBudget;
-      return merged;
+      return runMigrations(merged);
     }
   } catch(e) { console.warn('load fail', e); }
   return defaultState();
@@ -889,7 +897,8 @@ async function syncDownload(silencioso) {
     }
     const remote = JSON.parse(text);
     if (remote && typeof remote === 'object' && remote.config) {
-      STATE = remote;
+      // Roda as migrations no JSON vindo da nuvem (que pode estar desatualizado)
+      STATE = runMigrations(remote);
       saveStateLocal();
       setSyncStatus('ok');
       if (!silencioso) statusMsg('Baixado da nuvem');
@@ -3320,5 +3329,6 @@ if (STATE.config?.sync_url) {
 </script>
 </body>
 </html>
+
 
 
